@@ -1,0 +1,1 @@
+npx tauri dev
