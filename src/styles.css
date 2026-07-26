@@ -174,6 +174,132 @@ body {
 
 
 
+  /*$$$$$                                                                              /$$
+ /$$__  $$                                                                            | $$
+| $$  \__/  /$$$$$$  /$$$$$$/$$$$   /$$$$$$   /$$$$$$  /$$$$$$$   /$$$$$$  /$$$$$$$  /$$$$$$   /$$$$$$$
+| $$       /$$__  $$| $$_  $$_  $$ /$$__  $$ /$$__  $$| $$__  $$ /$$__  $$| $$__  $$|_  $$_/  /$$_____/
+| $$      | $$  \ $$| $$ \ $$ \ $$| $$  \ $$| $$  \ $$| $$  \ $$| $$$$$$$$| $$  \ $$  | $$   |  $$$$$$
+| $$    $$| $$  | $$| $$ | $$ | $$| $$  | $$| $$  | $$| $$  | $$| $$_____/| $$  | $$  | $$ /$$\____  $$
+|  $$$$$$/|  $$$$$$/| $$ | $$ | $$| $$$$$$$/|  $$$$$$/| $$  | $$|  $$$$$$$| $$  | $$  |  $$$$//$$$$$$$/
+ \______/  \______/ |__/ |__/ |__/| $$____/  \______/ |__/  |__/ \_______/|__/  |__/   \___/ |_______/
+                                  | $$
+                                  | $$
+                                  |_*/
+
+/* Button */
+button {
+    --width: 60px;
+    --height: 36px;
+    --horizontalPadding: 16px;
+
+    /* Size */
+    min-width: var(--width);
+    width: fit-content;
+    height: var(--height);
+    margin: 0;
+    padding: 0 var(--horizontalPadding);
+
+    /* Layout */
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    /* Appearence */
+    appearance: none;
+    background-color: var(--accent);
+    border-radius: calc(var(--height) / 2);
+    border: none;
+
+    /* Other */
+    cursor: pointer;
+    transition: border-radius .1s;
+}
+
+button:active {
+    /* Appearence */
+    border-radius: calc(var(--height) / 4);
+}
+
+/* Switch */
+input[type="checkbox"] {
+    --width: 60px;
+    --height: 36px;
+    --thumb: 24px;
+    --thumbSpace: calc((var(--height) - var(--thumb)) / 2);
+
+    /* Size */
+    width: var(--width);
+    height: var(--height);
+    margin: 0;
+    padding: 0;
+
+    /* Layout */
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    /* Appearence */
+    appearance: none;
+    background-color: var(--accent);
+    border-radius: calc(var(--height) / 2);
+
+    /* Other */
+    cursor: pointer;
+    transition: border-radius .1s;
+}
+
+input[type="checkbox"]:active {
+    /* Appearence */
+    border-radius: calc(var(--height) / 4);
+}
+
+input[type="checkbox"]::before {
+    content: '';
+    --thumbSize: calc((var(--height) - calc(var(--thumbSpace)) * 2));
+
+    /* Size */
+    width: var(--thumbSize);
+    height: var(--thumbSize);
+
+    /* Layout */
+    position: absolute;
+    top: var(--thumbSpace);
+    left: var(--thumbSpace);
+
+    /* Appearence */
+    border-radius: var(--height);
+    background: var(--onBackground);
+
+    /* Other */
+    transition: width .2s, height .2s, top .2s, left .2s;
+}
+
+input[type="checkbox"]:active::before {
+    /* Size */
+    width: calc(var(--thumbSize) + 2px);
+    height: calc(var(--thumbSize) + 2px);
+
+    /* Layout */
+    top: calc(var(--thumbSpace) - 1px);
+    left: calc(var(--thumbSpace) - 1px);
+}
+
+input[type="checkbox"]:checked::before {
+    /* Layout */
+    left: calc(var(--width) - var(--thumb) - var(--thumbSpace));
+}
+
+input[type="checkbox"]:disabled::before {
+    /* Appearence */
+    opacity: 0.5;
+}
+
+
   /*$$$$$                        /$$                           /$$
  /$$__  $$                      | $$                          | $$
 | $$  \__/  /$$$$$$  /$$$$$$$  /$$$$$$    /$$$$$$  /$$$$$$$  /$$$$$$
@@ -188,6 +314,8 @@ body {
     flex: 1;
 
     /* Layout */
+    display: flex;
+    flex-direction: column;
     overflow-y: scroll;
     overflow-x: hidden;
 }
@@ -195,25 +323,41 @@ body {
 .page {
     /* Size */
     width: min(90vh, 100vw);
-    margin: 30px auto;
+    margin: 20px auto;
 
     /* Layout */
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 30px;
-}
-
-.page-title {
-    /* Text */
-    font-family: var(--headerFont);
-    font-weight: bold;
-    font-size: 3rem;
+    gap: 20px;
 }
 
 .page-hc {
     /* Layout */
     display: flex;
     flex-direction: row;
-    gap: 20px;
+    gap: 16px;
+}
+
+.page-vc {
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+
+
+ /*$$$$$$$                    /$$
+|__  $$__/                   | $$
+   | $$  /$$$$$$  /$$   /$$ /$$$$$$
+   | $$ /$$__  $$|  $$ /$$/|_  $$_/
+   | $$| $$$$$$$$ \  $$$$/   | $$
+   | $$| $$_____/  >$$  $$   | $$ /$$
+   | $$|  $$$$$$$ /$$/\  $$  |  $$$$/
+   |__/ \_______/|__/  \__/   \__*/
+
+h1, h2, h3 {
+    /* Size */
+    margin: 0;
 }
