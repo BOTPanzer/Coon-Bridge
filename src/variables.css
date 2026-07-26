@@ -1,0 +1,54 @@
+ /*$$$$$$$                    /$$
+| $$_____/                   | $$
+| $$     /$$$$$$  /$$$$$$$  /$$$$$$   /$$$$$$$
+| $$$$$ /$$__  $$| $$__  $$|_  $$_/  /$$_____/
+| $$__/| $$  \ $$| $$  \ $$  | $$   |  $$$$$$
+| $$   | $$  | $$| $$  | $$  | $$ /$$\____  $$
+| $$   |  $$$$$$/| $$  | $$  |  $$$$//$$$$$$$/
+|__/    \______/ |__/  |__/   \___/ |______*/
+
+@font-face { 
+    src: url('./assets/fonts/noto-sans.woff2');
+    font-family: noto;
+}
+
+
+
+ /*$$$$$$                                                                    /$$
+| $$__  $$                                                                  | $$
+| $$  \ $$  /$$$$$$   /$$$$$$$ /$$   /$$ /$$$$$$/$$$$   /$$$$$$  /$$$$$$$  /$$$$$$
+| $$  | $$ /$$__  $$ /$$_____/| $$  | $$| $$_  $$_  $$ /$$__  $$| $$__  $$|_  $$_/
+| $$  | $$| $$  \ $$| $$      | $$  | $$| $$ \ $$ \ $$| $$$$$$$$| $$  \ $$  | $$
+| $$  | $$| $$  | $$| $$      | $$  | $$| $$ | $$ | $$| $$_____/| $$  | $$  | $$ /$$
+| $$$$$$$/|  $$$$$$/|  $$$$$$$|  $$$$$$/| $$ | $$ | $$|  $$$$$$$| $$  | $$  |  $$$$/
+|_______/  \______/  \_______/ \______/ |__/ |__/ |__/ \_______/|__/  |__/   \__*/
+
+:root {
+    /* Visuals */
+    color-scheme: dark; /* Use dark scrollbars/inputs */
+
+    /* Theme (surfaces) */
+    --background: #191724;
+    --onBackground: #e0def4;
+    --onBackgroundFilter: brightness(0) saturate(100%) invert(91%) sepia(3%) saturate(1449%) hue-rotate(205deg) brightness(98%) contrast(95%);
+
+    --surface: #26233a;
+    --onSurface: #e0def4;
+    --onSurfaceFilter: brightness(0) saturate(100%) invert(91%) sepia(3%) saturate(1449%) hue-rotate(205deg) brightness(98%) contrast(95%);
+
+    /* Text */
+    --textFont: noto;
+    --headerFont: noto;
+
+    /* Special */
+    --hover: color-mix(in srgb, var(--onBackground) 15%, transparent);
+    --accent: #d46083;
+    --selection: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+*[theme="surface"] {
+    /* Theme */
+    --background: var(--surface);
+    --onBackground: var(--onSurface);
+    --onBackgroundFilter: var(--onSurfaceFilter);
+}

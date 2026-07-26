@@ -1,116 +1,219 @@
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
+@import './variables.css';
+
+
+
+ /*$$$$$$                                                                    /$$
+| $$__  $$                                                                  | $$
+| $$  \ $$  /$$$$$$   /$$$$$$$ /$$   /$$ /$$$$$$/$$$$   /$$$$$$  /$$$$$$$  /$$$$$$
+| $$  | $$ /$$__  $$ /$$_____/| $$  | $$| $$_  $$_  $$ /$$__  $$| $$__  $$|_  $$_/
+| $$  | $$| $$  \ $$| $$      | $$  | $$| $$ \ $$ \ $$| $$$$$$$$| $$  \ $$  | $$
+| $$  | $$| $$  | $$| $$      | $$  | $$| $$ | $$ | $$| $$_____/| $$  | $$  | $$ /$$
+| $$$$$$$/|  $$$$$$/|  $$$$$$$|  $$$$$$/| $$ | $$ | $$|  $$$$$$$| $$  | $$  |  $$$$/
+|_______/  \______/  \_______/ \______/ |__/ |__/ |__/ \_______/|__/  |__/   \__*/
+
+html {
+    /* Visuals */
+    background: var(--background);
+
+    /* Text */
+    color: var(--onBackground);
+    font-family: var(--textFont);
+    font-size: 16px;
+    user-select: none;
+
+    /* Other */
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.logo.typescript:hover {
-  filter: drop-shadow(0 0 2em #2d79c7);
-}
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
+body {
+    --scrollbarSize: 16px;
 
-  color: #0f0f0f;
-  background-color: #f6f6f6;
+    /* Size */
+    width: 100vw;
+    height: 100vh;
+    padding: 0;
+    margin: 0;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.container {
-  margin: 0;
-  padding-top: 10vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
+::-webkit-scrollbar {
+    /* Size */
+    width: var(--scrollbarSize);
+    height: var(--scrollbarSize);
+
+    /* Visuals */
+    background: var(--hover);
+    border-radius: calc(var(--scrollbarSize) / 2);
+    border: solid 4px transparent;
+    background-clip: content-box;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
+::-webkit-scrollbar-thumb {
+    /* Size */
+    min-height: min(69px, 100%);
+
+    /* Visuals */
+    background: var(--onBackground);
+    border-radius: calc(var(--scrollbarSize) / 2);
+    border: solid 4px transparent;
+    background-clip: content-box;
+
+    /* Other */
+    transition: border .3s;
 }
 
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
+::-webkit-scrollbar-thumb:hover {
+    /* Visuals */
+    border: solid 3px transparent;
 }
 
-.row {
-  display: flex;
-  justify-content: center;
+
+
+ /*$$$$$$$                  /$$ /$$
+|__  $$__/                 | $$| $$
+   | $$  /$$$$$$   /$$$$$$ | $$| $$$$$$$   /$$$$$$   /$$$$$$
+   | $$ /$$__  $$ /$$__  $$| $$| $$__  $$ |____  $$ /$$__  $$
+   | $$| $$  \ $$| $$  \ $$| $$| $$  \ $$  /$$$$$$$| $$  \__/
+   | $$| $$  | $$| $$  | $$| $$| $$  | $$ /$$__  $$| $$
+   | $$|  $$$$$$/|  $$$$$$/| $$| $$$$$$$/|  $$$$$$$| $$
+   |__/ \______/  \______/ |__/|_______/  \_______/|_*/
+
+.toolbar {
+    /* Size */
+    width: 100vw;
+    height: 45px;
+    padding-right: 10px;
+
+    /* Layout */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+
+    /* Visuals */
+    background-color: var(--background);
+    z-index: 1;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+.toolbar-button {
+    /* Size */
+    min-width: fit-content;
+    width: 50px;
+    height: 26px;
+    padding: 0 13px;
+
+    /* Layout */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Visuals */
+    border-radius: 15px;
+
+    /* Other */
+    cursor: pointer;
+    transition: background-color .1s;
 }
 
-a:hover {
-  color: #535bf2;
+.toolbar-button:hover {
+    /* Visuals */
+    background-color: var(--hover);
 }
 
-h1 {
-  text-align: center;
+.toolbar-button[exit]:hover {
+    /* Visuals */
+    background-color: #c42b1c;
 }
 
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+.toolbar-drag {
+    /* Size */
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding-left: 10px;
+
+    /* Layout */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: left;
+    gap: 10px;
+
+    /* Other */
+    -webkit-app-region: drag;
 }
 
-button {
-  cursor: pointer;
+.toolbar-drag > img {
+    /* Size */
+    width: 20px;
+    height: 20px;
+
+    /* Other */
+    -webkit-user-drag: none;
 }
 
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
+.toolbar-drag > span {
+    /* Size */
+    max-width: 100%; 
 
-input,
-button {
-  outline: none;
-}
+    /* Layout */
+    display: block; 
 
-#greet-input {
-  margin-right: 5px;
+    /* Text */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
 
-  a:hover {
-    color: #24c8db;
-  }
 
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
-  }
+  /*$$$$$                        /$$                           /$$
+ /$$__  $$                      | $$                          | $$
+| $$  \__/  /$$$$$$  /$$$$$$$  /$$$$$$    /$$$$$$  /$$$$$$$  /$$$$$$
+| $$       /$$__  $$| $$__  $$|_  $$_/   /$$__  $$| $$__  $$|_  $$_/
+| $$      | $$  \ $$| $$  \ $$  | $$    | $$$$$$$$| $$  \ $$  | $$
+| $$    $$| $$  | $$| $$  | $$  | $$ /$$| $$_____/| $$  | $$  | $$ /$$
+|  $$$$$$/|  $$$$$$/| $$  | $$  |  $$$$/|  $$$$$$$| $$  | $$  |  $$$$/
+ \______/  \______/ |__/  |__/   \___/   \_______/|__/  |__/   \__*/
+
+.content {
+    /* Size */
+    flex: 1;
+
+    /* Layout */
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.page {
+    /* Size */
+    width: min(90vh, 100vw);
+    margin: 30px auto;
+
+    /* Layout */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.page-title {
+    /* Text */
+    font-family: var(--headerFont);
+    font-weight: bold;
+    font-size: 3rem;
+}
+
+.page-hc {
+    /* Layout */
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
 }
