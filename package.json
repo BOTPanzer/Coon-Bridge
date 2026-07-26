@@ -1,6 +1,6 @@
 {
     "name": "coon-server",
-    "description": "Privacy-focused server for managing Coon Gallery backups and AI description generation.",
+    "description": "A server for managing Coon Gallery backups and AI description generation.",
     "author": "Botpa",
     "version": "1.0.0",
     "type": "module",

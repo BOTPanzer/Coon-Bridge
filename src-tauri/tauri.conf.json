@@ -3,6 +3,7 @@
     "productName": "Coon Server",
     "version": "1.0.0",
     "identifier": "com.botpa.coonserver",
+    "mainBinaryName": "CoonServer",
     "build": {
         "beforeDevCommand": "npm run dev",
         "devUrl": "http://localhost:1420",
