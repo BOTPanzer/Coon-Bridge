@@ -1,4 +1,5 @@
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getMatches } from '@tauri-apps/plugin-cli';
 
 
 
@@ -31,6 +32,11 @@ const elements = {
             | $$      | $$
             |__/      |_*/
 
+//Start info
+const matches = await getMatches();
+const startHidden = matches.args.hidden?.value
+
+//App logic
 export class App {
 
      /*$      /$$ /$$                 /$$
@@ -50,18 +56,8 @@ export class App {
         //Prevent flashbang while loading
         window.onload = () => {
             //Show window after it loads
-            this.window.show()
+            if (!startHidden) this.window.show()
         }
-
-        //Prevent closing
-        this.window.onCloseRequested(async (e) => {
-            //Intercept
-            e.preventDefault()
-
-            //Check for sync in progress
-            const proceed = true//await checkUnsavedChanges()
-            if (proceed) this.window.destroy()
-        })
     }
 
      /*$$$$$$$                  /$$ /$$

@@ -1,6 +1,6 @@
 {
     "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-    "productName": "coon-server",
+    "productName": "Coon Server",
     "version": "1.0.0",
     "identifier": "com.botpa.coonserver",
     "build": {
@@ -13,7 +13,7 @@
         "withGlobalTauri": true,
         "windows": [
             {
-                "title": "CoonServer",
+                "title": "Coon Server",
                 "width": 1160,
                 "height": 660,
                 "minWidth": 600,
@@ -40,5 +40,15 @@
             "icons/icon.icns",
             "icons/icon.ico"
         ]
+    },
+    "plugins": {
+        "cli": {
+            "args": [
+                {
+                    "name": "hidden",
+                    "description": "Start application hidden in tray"
+                }
+            ]
+        }
     }
 }
