@@ -1,5 +1,5 @@
-# Coon Server
+# Coon Bridge
 
-A server for managing Coon Gallery backups and AI description generation.
+An app for managing Coon Gallery backups and AI description generation.
 
 WIP 🦝

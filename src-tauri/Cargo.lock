@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "CoonServer"
+name = "CoonBridge"
 version = "1.0.0"
 dependencies = [
  "serde",

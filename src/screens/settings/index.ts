@@ -122,7 +122,7 @@ export class SettingsScreen extends BaseScreen {
             const confirm = await ask(
                 `Are you sure you want to remove link ${app.settings.links.indexOf(link)}?`, 
                 {
-                    title: 'Coon Server',
+                    title: 'Coon Bridge',
                     kind: 'warning',
                     okLabel: 'Remove',
                     cancelLabel: 'Cancel'

@@ -1,9 +1,9 @@
 {
     "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-    "productName": "Coon Server",
+    "productName": "Coon Bridge",
     "version": "1.0.0",
-    "identifier": "com.botpa.coonserver",
-    "mainBinaryName": "CoonServer",
+    "identifier": "com.botpa.coonbridge",
+    "mainBinaryName": "CoonBridge",
     "build": {
         "beforeDevCommand": "npm run dev",
         "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
         "withGlobalTauri": true,
         "windows": [
             {
-                "title": "Coon Server",
+                "title": "Coon Bridge",
                 "width": 1160,
                 "height": 660,
                 "minWidth": 600,
