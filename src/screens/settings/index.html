@@ -1,8 +1,126 @@
 <h1>Settings</h1>
+<!-- Screen -->
+<button id="settings-back">Back</button>
+
+<!-- App -->
 <div class="page-vc">
-    <button id="settings-back">Back</button>
+    <!-- Title -->
+    <h2>App</h2>
+
+    <!-- Start with windows -->
     <div class="page-hc" center>
-        <input id="settings-syncIgnoreDeletedItems" type="checkbox">
-        <span>Ignore deleted phone images when syncing albums<br>If not ignored, PC images will be deleted too</span>
+        <input type="checkbox" disabled>
+        <span>Start with windows</span>
     </div>
 </div>
+
+<!-- Sync -->
+<div class="page-vc">
+    <!-- Title -->
+    <h2>Sync</h2>
+
+    <!-- Ignore deleted phone items -->
+    <div class="page-hc" center>
+        <input id="settings-syncIgnoreDeletedItems" type="checkbox">
+        <span>Ignore deleted phone images when syncing albums.<br>If not ignored, PC images will be deleted too.</span>
+    </div>
+</div>
+
+<!-- Links -->
+ <div class="page-vc">
+    <!-- Title -->
+    <h2>Links</h2>
+
+    <!-- Items -->
+    <div class="page-vc">
+        <div class="link">
+            <span>Link 1</span>
+            <button icon>🗑️</button>
+            <div>
+                <div>
+                    <button icon>📂</button>
+                    <input type="text" placeholder="Album folder path">
+                </div>
+                <div>
+                    <button icon>📂</button>
+                    <input type="text" placeholder="Metadata file path">
+                </div>
+            </div>
+        </div>
+        <div class="link">
+            <span>Link 2</span>
+            <button icon>🗑️</button>
+            <div>
+                <div>
+                    <button icon>📂</button>
+                    <input type="text" placeholder="Album folder path">
+                </div>
+                <div>
+                    <button icon>📂</button>
+                    <input type="text" placeholder="Metadata file path">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add --> 
+    <button id="settings-links-add">Add</button>
+</div>
+
+<style>
+    .link {
+        /* Size */
+        padding: 10px;
+        margin-top: 8px;
+
+        /* Layout */
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        box-sizing: border-box;
+
+        /* Appearence */
+        background-color: var(--surface);
+        border: 2px dashed var(--onSurface);
+        border-radius: 20px;
+    }
+
+    .link > span {
+        /* Size */
+        padding: 0 8px;
+
+        /* Layout */
+        position: absolute;
+        top: -12px;
+        left: 8px;
+
+        /* Appearence */
+        background-color: var(--surface);
+        border-radius: 10px;
+        font-size: 0.8em;
+        border-top: 2px dashed var(--onSurface);
+    }
+
+    .link > div {
+        /* Size */
+        flex: 1;
+
+        /* Layout */
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .link > div > div {
+        /* Layout */
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    .link > div > div > input[type="text"] {
+        /* Size */
+        flex: 1;
+    }
+</style>

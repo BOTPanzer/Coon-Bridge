@@ -219,7 +219,16 @@ button {
     transition: border-radius .1s;
 }
 
-button:active {
+button[icon] {
+    --width: var(--height);
+}
+
+button:disabled {
+    /* Other */
+    cursor: not-allowed;
+}
+
+button:not(:disabled):active {
     /* Appearence */
     border-radius: calc(var(--height) / 4);
 }
@@ -255,7 +264,7 @@ input[type="checkbox"] {
     transition: border-radius .1s;
 }
 
-input[type="checkbox"]:active {
+input[type="checkbox"]:not(:disabled):active {
     /* Appearence */
     border-radius: calc(var(--height) / 4);
 }
@@ -281,7 +290,7 @@ input[type="checkbox"]::before {
     transition: width .2s, height .2s, top .2s, left .2s;
 }
 
-input[type="checkbox"]:active::before {
+input[type="checkbox"]:not(:disabled):active::before {
     /* Size */
     width: calc(var(--thumbSize) + 2px);
     height: calc(var(--thumbSize) + 2px);
@@ -296,10 +305,63 @@ input[type="checkbox"]:checked::before {
     left: calc(var(--width) - var(--thumb) - var(--thumbSpace));
 }
 
+input[type="checkbox"]:checked:not(:disabled):active::before {
+    /* Layout */
+    left: calc(var(--width) - var(--thumb) - var(--thumbSpace) - 1px);
+}
+
 input[type="checkbox"]:disabled::before {
     /* Appearence */
     opacity: 0.5;
 }
+
+/* Text */
+input[type="text"] {
+    --width: 100px;
+    --height: 36px;
+
+    /* Size */
+    min-width: var(--width);
+    width: var(--width);
+    height: var(--height);
+    margin: 0;
+    padding: 0 10px;
+
+    /* Layout */
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    /* Appearence */
+    appearance: none;
+    background-color: var(--accent);
+    border-radius: calc(var(--height) / 2);
+    border: none;
+    font-family: noto;
+
+    /* Other */
+    cursor: text;
+    transition: border-radius .1s;
+}
+
+input[type="text"]:not(:disabled):focus {
+    /* Appearence */
+    border-radius: calc(var(--height) / 4);
+}
+
+input[type="text"]::placeholder {
+    /* Appearence */
+    color: var(--onBackgroundAlt);
+}
+
+/* Inputs */
+input:disabled {
+    /* Other */
+    cursor: not-allowed;
+}
+
 
 
   /*$$$$$                        /$$                           /$$
@@ -326,7 +388,7 @@ input[type="checkbox"]:disabled::before {
     /* Size */
     width: min(90vh, 100vw);
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 20px 20px 20px;
 
     /* Layout */
     box-sizing: border-box;

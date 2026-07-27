@@ -31,10 +31,14 @@
     --background: #191724;
     --onBackground: #e0def4;
     --onBackgroundFilter: brightness(0) saturate(100%) invert(91%) sepia(3%) saturate(1449%) hue-rotate(205deg) brightness(98%) contrast(95%);
+    --onBackgroundAlt: #bab9c2;
+    --onBackgroundFilter: brightness(0) saturate(100%) invert(79%) sepia(3%) saturate(597%) hue-rotate(207deg) brightness(97%) contrast(86%);
 
     --surface: #26233a;
     --onSurface: #e0def4;
     --onSurfaceFilter: brightness(0) saturate(100%) invert(91%) sepia(3%) saturate(1449%) hue-rotate(205deg) brightness(98%) contrast(95%);
+    --onSurfaceAlt: #bab9c2;
+    --onSurfaceFilter: brightness(0) saturate(100%) invert(79%) sepia(3%) saturate(597%) hue-rotate(207deg) brightness(97%) contrast(86%);
 
     /* Text */
     --textFont: noto;
