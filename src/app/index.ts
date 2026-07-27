@@ -43,8 +43,7 @@ const elements = {
           |__/      |_*/
 
 //Start info
-const matches = await getMatches();
-const startHidden = matches.args.hidden?.value || false;
+const startHidden = (await getMatches()).args.hidden?.value || false;
 
 //Settings
 const settings: AppSettings = await loadSettings();

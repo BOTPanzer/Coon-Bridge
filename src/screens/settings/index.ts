@@ -1,7 +1,7 @@
 import type { App } from '../../app';
 import { BaseScreen } from  '../screen';
 import html from './index.html?raw';
-import { open } from '@tauri-apps/plugin-dialog';
+import { ask, open } from '@tauri-apps/plugin-dialog';
 
 export class SettingsScreen extends BaseScreen {
 
@@ -118,6 +118,18 @@ export class SettingsScreen extends BaseScreen {
 
         //Add listeners
         remove.onclick = async () => {
+            //Ask for confirmation
+            const confirm = await ask(
+                `Are you sure you want to remove link ${app.settings.links.indexOf(link)}?`, 
+                {
+                    title: 'Coon Server',
+                    kind: 'warning',
+                    okLabel: 'Remove',
+                    cancelLabel: 'Cancel'
+                }
+            )
+            if (!confirm) return;
+
             //Remove link & element
             const index = app.settings.links.remove(link);
             if (index <= -1) return
