@@ -17,8 +17,8 @@ html {
 
     /* Text */
     color: var(--onBackground);
+    font-size: var(--textSize);
     font-family: var(--textFont);
-    font-size: 16px;
     user-select: none;
 
     /* Other */
@@ -213,6 +213,7 @@ button {
     border-radius: calc(var(--height) / 2);
     border: none;
     font-family: noto;
+    font-size: 0.9em;
 
     /* Other */
     cursor: pointer;
@@ -325,7 +326,7 @@ input[type="text"] {
     width: var(--width);
     height: var(--height);
     margin: 0;
-    padding: 0 10px;
+    padding: 0 16px;
 
     /* Layout */
     position: relative;
@@ -340,6 +341,7 @@ input[type="text"] {
     border-radius: calc(var(--height) / 2);
     border: none;
     font-family: noto;
+    font-size: 0.9em;
 
     /* Other */
     cursor: text;

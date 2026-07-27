@@ -41,6 +41,7 @@
     --onSurfaceFilter: brightness(0) saturate(100%) invert(79%) sepia(3%) saturate(597%) hue-rotate(207deg) brightness(97%) contrast(86%);
 
     /* Text */
+    --textSize: 16px;
     --textFont: noto;
     --headerFont: noto;
 

@@ -32,36 +32,8 @@
     <h2>Links</h2>
 
     <!-- Items -->
-    <div class="page-vc">
-        <div class="link">
-            <span>Link 1</span>
-            <button icon>🗑️</button>
-            <div>
-                <div>
-                    <button icon>📂</button>
-                    <input type="text" placeholder="Album folder path">
-                </div>
-                <div>
-                    <button icon>📂</button>
-                    <input type="text" placeholder="Metadata file path">
-                </div>
-            </div>
-        </div>
-        <div class="link">
-            <span>Link 2</span>
-            <button icon>🗑️</button>
-            <div>
-                <div>
-                    <button icon>📂</button>
-                    <input type="text" placeholder="Album folder path">
-                </div>
-                <div>
-                    <button icon>📂</button>
-                    <input type="text" placeholder="Metadata file path">
-                </div>
-            </div>
-        </div>
-    </div>
+    <span id="settings-links-empty">No links</span>
+    <div id="settings-links-list" class="page-vc"></div>
 
     <!-- Add --> 
     <button id="settings-links-add">Add</button>
@@ -71,38 +43,35 @@
     .link {
         /* Size */
         padding: 10px;
-        margin-top: 8px;
 
         /* Layout */
-        position: relative;
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         gap: 10px;
         box-sizing: border-box;
 
         /* Appearence */
         background-color: var(--surface);
-        border: 2px dashed var(--onSurface);
+        /*border: 2px dashed var(--onSurface);*/
         border-radius: 20px;
     }
 
     .link > span {
         /* Size */
-        padding: 0 8px;
-
-        /* Layout */
-        position: absolute;
-        top: -12px;
-        left: 8px;
-
-        /* Appearence */
-        background-color: var(--surface);
-        border-radius: 10px;
-        font-size: 0.8em;
-        border-top: 2px dashed var(--onSurface);
+        margin-top: -4px;
     }
 
     .link > div {
+        /* Size */
+        flex: 1;
+
+        /* Layout */
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    .link > div > div {
         /* Size */
         flex: 1;
 
@@ -112,14 +81,14 @@
         gap: 10px;
     }
 
-    .link > div > div {
+    .link > div > div > div {
         /* Layout */
         display: flex;
         flex-direction: row;
         gap: 10px;
     }
 
-    .link > div > div > input[type="text"] {
+    .link > div > div > div > input[type="text"] {
         /* Size */
         flex: 1;
     }

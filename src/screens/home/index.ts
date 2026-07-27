@@ -10,9 +10,7 @@ export class HomeScreen extends BaseScreen {
     }
 
     //Rendering
-    render(): string {
-        return html;
-    }
+    render(): string { return html; }
 
     //State
     protected onRendered(): void {
@@ -24,8 +22,6 @@ export class HomeScreen extends BaseScreen {
 
     protected onOpen(): void {}
 
-    protected onClosed(): boolean {
-        return true;
-    }
+    protected onClosed(): boolean { return true; }
 
 }
