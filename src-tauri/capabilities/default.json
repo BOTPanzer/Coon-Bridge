@@ -25,6 +25,11 @@
             "identifier": "fs:allow-write-text-file",
             "allow": [{ "path": "**" }]
         },
+        "fs:allow-mkdir",
+        {
+            "identifier": "fs:allow-mkdir",
+            "allow": [{ "path": "**" }]
+        },
         "fs:allow-exists",
         "fs:allow-stat"
     ]

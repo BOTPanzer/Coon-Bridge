@@ -18,6 +18,13 @@ export class SettingsScreen extends BaseScreen {
     protected onRendered(): void {
         //Add listeners
         document.getElementById('settings-back')!.onclick = () => { this.app.open(this.app.homeScreen); }
+
+        const syncIgnoreDeletedItems = document.getElementById('settings-syncIgnoreDeletedItems') as HTMLInputElement;
+        syncIgnoreDeletedItems.checked = this.app.settings.syncIgnoreDeletedItems;
+        syncIgnoreDeletedItems.oninput = async () => {
+            this.app.settings.syncIgnoreDeletedItems = syncIgnoreDeletedItems.checked;
+            await this.app.saveSettings();
+        }
     }
 
     protected onOpen(): void {}

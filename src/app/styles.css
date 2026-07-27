@@ -232,6 +232,7 @@ input[type="checkbox"] {
     --thumbSpace: calc((var(--height) - var(--thumb)) / 2);
 
     /* Size */
+    min-width: var(--width);
     width: var(--width);
     height: var(--height);
     margin: 0;
@@ -354,6 +355,11 @@ input[type="checkbox"]:disabled::before {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.page-hc[center], .page-vc[center] {
+    /* Layout */
+    align-items: center;
 }
 
 

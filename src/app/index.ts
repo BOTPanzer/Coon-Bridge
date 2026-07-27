@@ -5,7 +5,8 @@ import { BaseScreen } from '../screens/screen';
 import { SettingsScreen } from '../screens/settings';
 import { MetadataScreen } from '../screens/metadata';
 import { SyncScreen } from '../screens/sync';
-
+import { appConfigDir, join } from '@tauri-apps/api/path';
+import { Util } from '../util/util';
 
 
  /*$$$$$$$ /$$                                               /$$
@@ -26,6 +27,36 @@ const elements = {
     //Content
     contentPage: document.getElementById('content-page')!
 }
+
+
+
+  /*$$$$$              /$$     /$$     /$$
+ /$$__  $$            | $$    | $$    |__/
+| $$  \__/  /$$$$$$  /$$$$$$ /$$$$$$   /$$ /$$$$$$$   /$$$$$$   /$$$$$$$
+|  $$$$$$  /$$__  $$|_  $$_/|_  $$_/  | $$| $$__  $$ /$$__  $$ /$$_____/
+ \____  $$| $$$$$$$$  | $$    | $$    | $$| $$  \ $$| $$  \ $$|  $$$$$$
+ /$$  \ $$| $$_____/  | $$ /$$| $$ /$$| $$| $$  | $$| $$  | $$ \____  $$
+|  $$$$$$/|  $$$$$$$  |  $$$$/|  $$$$/| $$| $$  | $$|  $$$$$$$ /$$$$$$$/
+ \______/  \_______/   \___/   \___/  |__/|__/  |__/ \____  $$|_______/
+                                                     /$$  \ $$
+                                                    |  $$$$$$/
+                                                     \_____*/
+
+//Load settings
+const settingsPath = await join(await appConfigDir(), 'settings.json');
+const settings: any = await Util.readJSON(settingsPath);
+
+//Fix settings
+if (!Array.isArray(settings.links)) {
+    settings.links = []
+    await Util.saveJSON(settingsPath, settings);
+}
+if (typeof settings.syncIgnoreDeletedItems !== 'boolean') {
+    settings.syncIgnoreDeletedItems = true
+    await Util.saveJSON(settingsPath, settings);
+}
+
+
 
   /*$$$$$
  /$$__  $$
@@ -107,19 +138,21 @@ export class App {
     //Screens
     private isChangingScreen: boolean = false;
     private _currentScreen: BaseScreen | null = null;
-    private _homeScreen: HomeScreen = new HomeScreen(this);
-    private _settingsScreen: SettingsScreen = new SettingsScreen(this);
-    private _metadataScreen: MetadataScreen = new MetadataScreen(this);
-    private _syncScreen: SyncScreen = new SyncScreen(this);
 
     get currentScreen(): BaseScreen { return this._currentScreen!; }
+
+    private _homeScreen: HomeScreen
+    private _settingsScreen: SettingsScreen
+    private _metadataScreen: MetadataScreen
+    private _syncScreen: SyncScreen
+
     get homeScreen(): HomeScreen { return this._homeScreen; }
     get settingsScreen(): SettingsScreen { return this._settingsScreen; }
     get metadataScreen(): MetadataScreen { return this._metadataScreen; }
     get syncScreen(): SyncScreen { return this._syncScreen; }
 
     //Toggle
-    open(screen: BaseScreen) {
+    open = (newScreen: BaseScreen) => {
         //Already changing screen
         if (this.isChangingScreen) return;
         this.isChangingScreen = true;
@@ -136,14 +169,35 @@ export class App {
         const timeout = this.currentScreen == null ? 0 : 250;
         setTimeout(() => {
             //Open new screen
-            elements.contentPage.innerHTML = screen.render();
-            screen.open();
-            this._currentScreen = screen;
+            elements.contentPage.innerHTML = newScreen.render();
+            newScreen.open();
+
+            //Save new screen as current
+            this._currentScreen = newScreen;
 
             //Finish changing screen
             elements.contentPage.removeAttribute('hidden');
             this.isChangingScreen = false;
         }, timeout);
+    }
+
+      /*$$$$$              /$$     /$$     /$$
+     /$$__  $$            | $$    | $$    |__/
+    | $$  \__/  /$$$$$$  /$$$$$$ /$$$$$$   /$$ /$$$$$$$   /$$$$$$   /$$$$$$$
+    |  $$$$$$  /$$__  $$|_  $$_/|_  $$_/  | $$| $$__  $$ /$$__  $$ /$$_____/
+     \____  $$| $$$$$$$$  | $$    | $$    | $$| $$  \ $$| $$  \ $$|  $$$$$$
+     /$$  \ $$| $$_____/  | $$ /$$| $$ /$$| $$| $$  | $$| $$  | $$ \____  $$
+    |  $$$$$$/|  $$$$$$$  |  $$$$/|  $$$$/| $$| $$  | $$|  $$$$$$$ /$$$$$$$/
+     \______/  \_______/   \___/   \___/  |__/|__/  |__/ \____  $$|_______/
+                                                        /$$  \ $$
+                                                        |  $$$$$$/
+                                                        \_____*/
+
+    get settings(): any { return settings; }
+
+    saveSettings = async () => {
+        //Save settings
+        await Util.saveJSON(settingsPath, settings)
     }
 
       /*$$$$$
@@ -158,14 +212,17 @@ export class App {
                 | $$      | $$
                 |__/      |_*/
 
+
     constructor() {
         //Init app
         this.initWindow();
         this.initToolbar();
 
         //Init screens
-        this._homeScreen
-        this._settingsScreen
+        this._homeScreen = new HomeScreen(this);
+        this._settingsScreen = new SettingsScreen(this);
+        this._metadataScreen = new MetadataScreen(this);
+        this._syncScreen = new SyncScreen(this);
         this.open(this.homeScreen);
     }
 
