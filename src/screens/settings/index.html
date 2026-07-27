@@ -8,9 +8,12 @@
     <h2>App</h2>
 
     <!-- Start with windows -->
-    <div class="page-hc" center>
+    <div class="item">
+        <div class="item-text">
+            <div class="item-title">Start with Windows</div>
+            <div class="item-description">Load the app in the background when Windows starts.</div>
+        </div>
         <input type="checkbox" disabled>
-        <span>Start with windows</span>
     </div>
 </div>
 
@@ -20,9 +23,12 @@
     <h2>Sync</h2>
 
     <!-- Ignore deleted phone items -->
-    <div class="page-hc" center>
+    <div class="item">
+        <div class="item-text">
+            <div class="item-title">Ignore deleted phone images</div>
+            <div class="item-description">Ignore deleted phone images when syncing albums. If not ignored, deleting an image in your phone will delete in your PC too.</div>
+        </div>
         <input id="settings-syncIgnoreDeletedItems" type="checkbox">
-        <span>Ignore deleted phone images when syncing albums.<br>If not ignored, PC images will be deleted too.</span>
     </div>
 </div>
 
@@ -30,6 +36,17 @@
  <div class="page-vc">
     <!-- Title -->
     <h2>Links</h2>
+
+    <!-- Description -->
+    <span class="item-description">
+        A <b>link</b> is formed by an <b>album folder</b> and a <b>metadata file</b>.
+        <ul>
+            <li>Add an album folder to enable backing it up.</li>
+            <li>Add a metadata file to enable generating metadata for its album.</li>
+        </ul>
+        <br>
+        Make sure you add links in the same order as in the phone app.
+    </span>
 
     <!-- Items -->
     <span id="settings-links-empty">No links</span>
@@ -40,25 +57,66 @@
 </div>
 
 <style>
+    /* Settings items */
+    .item {
+        /* Size */
+        padding: 10px 16px;
+
+        /* Layout */
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+
+        /* Appearence */
+        background-color: var(--surface);
+        border-radius: 20px;
+    }
+
+    .item-text {
+        /* Size */
+        flex: 1;
+
+        /* Layout */
+        display: flex;
+        flex-direction: column;
+    }
+
+    .item-title {
+        /* Size */
+        margin-bottom: 5px;
+
+        /* Appearence */
+        font-weight: bold;
+    }
+
+    .item-description {
+        /* Appearence */
+        font-size: 0.8em;
+        color: var(--onBackgroundAlt);
+    }
+
+    /* Links */
     .link {
         /* Size */
-        padding: 10px;
+        padding: 10px 16px;
 
         /* Layout */
         display: flex;
         flex-direction: column;
         gap: 10px;
-        box-sizing: border-box;
 
         /* Appearence */
         background-color: var(--surface);
-        /*border: 2px dashed var(--onSurface);*/
         border-radius: 20px;
     }
 
     .link > span {
         /* Size */
         margin-top: -4px;
+
+        /* Appearence */
+        font-weight: bold;
     }
 
     .link > div {
