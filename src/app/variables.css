@@ -48,7 +48,7 @@
     /* Special */
     --hover: color-mix(in srgb, var(--onBackground) 15%, transparent);
     --accent: #d46083;
-    --selection: color-mix(in srgb, var(--accent) 15%, transparent);
+    --selection: #b14d6b;
 }
 
 *[theme="surface"] {

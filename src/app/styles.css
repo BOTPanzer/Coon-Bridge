@@ -72,6 +72,10 @@ body {
     border: solid 3px transparent;
 }
 
+*::selection {
+    background-color: var(--selection);
+}
+
 
 
  /*$$$$$$$                  /$$ /$$
