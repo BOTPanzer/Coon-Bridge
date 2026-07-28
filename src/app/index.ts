@@ -1,10 +1,6 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getMatches } from '@tauri-apps/plugin-cli';
-import { HomeScreen } from '../screens/home';
-import { BaseScreen } from '../screens/screen';
-import { SettingsScreen } from '../screens/settings';
-import { MetadataScreen } from '../screens/metadata';
-import { SyncScreen } from '../screens/sync';
+import { BaseScreen, HomeScreen, SettingsScreen, MetadataScreen, SyncScreen } from '../screens';
 import { AppSettings, loadSettings, saveSettings } from './settings';
 
 
@@ -167,8 +163,10 @@ export class App {
                                                         |  $$$$$$/
                                                          \_____*/
 
+    //Values
     get settings(): any { return settings; }
 
+    //Actions
     saveSettings = async () => {
         //Save settings
         await saveSettings(settings);
