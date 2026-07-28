@@ -14,10 +14,8 @@
         "core:window:allow-destroy",
         "cli:allow-cli-matches",
         "dialog:default",
-        "fs:allow-read-file",
-        "fs:allow-read-text-file",
         {
-            "identifier": "fs:allow-read-text-file",
+            "identifier": "fs:default",
             "allow": [{ "path": "**" }]
         },
         "fs:allow-write-text-file",
@@ -29,8 +27,6 @@
         {
             "identifier": "fs:allow-mkdir",
             "allow": [{ "path": "**" }]
-        },
-        "fs:allow-exists",
-        "fs:allow-stat"
+        }
     ]
 }

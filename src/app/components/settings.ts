@@ -1,4 +1,4 @@
-import { Util } from "../../util";
+import { Util, Link } from "../../util";
 import { appConfigDir, join } from '@tauri-apps/api/path';
 
 
@@ -16,11 +16,6 @@ import { appConfigDir, join } from '@tauri-apps/api/path';
                                                      \_____*/
 
 //Interfaces
-export interface Link {
-    albumFolder: string;
-    metadataFile: string;
-}
-
 export interface AppSettings {
     links: Link[];
     syncIgnoreDeletedItems: boolean;

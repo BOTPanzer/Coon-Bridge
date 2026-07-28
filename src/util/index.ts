@@ -1,5 +1,8 @@
-import { readTextFile, writeTextFile, mkdir } from "@tauri-apps/plugin-fs";
+import { readTextFile, writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
 import { dirname } from '@tauri-apps/api/path';
+import { invoke } from "@tauri-apps/api/core";
+
+
 
  /*$   /$$   /$$     /$$ /$$
 | $$  | $$  | $$    |__/| $$
@@ -141,3 +144,65 @@ Array.prototype.removeAt = function <T>(this: T[], index: number): T | undefined
 };
 
 export {};
+
+
+
+  /*$$$$$  /$$ /$$
+ /$$__  $$| $$| $$
+| $$  \ $$| $$| $$$$$$$  /$$   /$$ /$$$$$$/$$$$   /$$$$$$$
+| $$$$$$$$| $$| $$__  $$| $$  | $$| $$_  $$_  $$ /$$_____/
+| $$__  $$| $$| $$  \ $$| $$  | $$| $$ \ $$ \ $$|  $$$$$$
+| $$  | $$| $$| $$  | $$| $$  | $$| $$ | $$ | $$ \____  $$
+| $$  | $$| $$| $$$$$$$/|  $$$$$$/| $$ | $$ | $$ /$$$$$$$/
+|__/  |__/|__/|_______/  \______/ |__/ |__/ |__/|______*/
+
+export interface Link {
+    albumFolder: string;
+    metadataFile: string;
+}
+
+export class Album {
+
+    //Info
+    albumFolder: string
+    metadataFile: string
+
+    items: string[] = [];
+    metadata: object = {};
+
+    //Factory
+    constructor(link: Link, items: string[], metadata: object) {
+        //Save link info
+        this.albumFolder = link.albumFolder;
+        this.metadataFile = link.metadataFile;
+        this.items = items;
+        this.metadata = metadata;
+    }
+
+    static async create(link: Link): Promise<Album> {
+        //Temp
+        let items: string[] = [];
+        let metadata: object = {};
+
+        //Check if album is valid
+        if (await exists(link.albumFolder)) {
+            //Valid -> Get all allowed files in the album folder
+            items = await invoke<string[]>('list_folder_items', { folderPath: link.albumFolder, allowVideos: false });
+        }
+
+        //Check if metadata is valid
+        if (await exists(link.metadataFile)) {
+            //Valid -> Load metadata file info
+            metadata = await Util.readJSON(link.metadataFile);
+        }
+
+        //Create album
+        return new Album(link, items, metadata);
+    }
+
+    //Helpers
+    getItemPath(index: number): string {
+        return `${this.albumFolder}\\${this.items[index]}`;
+    }
+
+}

@@ -3,6 +3,8 @@ use tauri::{
     tray::TrayIconBuilder,
     Manager, WindowEvent,
 };
+use std::fs;
+use std::path::Path;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -52,7 +54,51 @@ pub fn run() {
                 api.prevent_close();
             }
         })
+        //Custom API
+        .invoke_handler(tauri::generate_handler![list_folder_items])
         //App
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+//Custom API
+#[tauri::command]
+fn list_folder_items(folder_path: String, allow_videos: bool) -> Result<Vec<String>, String> {
+    //Get dir
+    let dir = Path::new(&folder_path);
+
+    //List entries
+    let mut entries: Vec<_> = fs::read_dir(dir)
+        .map_err(|e| e.to_string())?
+        .filter_map(|res| res.ok())
+        .filter(|entry| {
+            let path = entry.path();
+            let is_file = entry.file_type().map(|ft| ft.is_file()).unwrap_or(false);
+            let ext = path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .map(|ext| ext.to_lowercase());
+            let is_image = matches!(
+                ext.as_deref(),
+                Some("png" | "jpg" | "jpeg" | "webp" | "bmp" | "gif" | "heic" | "heif" | "avif" | "tiff")
+            );
+            let is_video = allow_videos && matches!(
+                ext.as_deref(),
+                Some("mp4" | "mkv" | "webm" | "mov" | "avi" | "wmv" | "flv" | "m4v")
+            );
+            is_file && (is_image || is_video)
+        })
+        .map(|entry| {
+            let mtime = entry.metadata()
+                .and_then(|m| m.modified())
+                .ok();
+            (entry.file_name().to_string_lossy().into_owned(), mtime)
+        })
+        .collect();
+
+    //Sort newest first
+    entries.sort_by(|a, b| b.1.cmp(&a.1));
+
+    //Return entries
+    Ok(entries.into_iter().map(|(name, _)| name).collect())
 }
