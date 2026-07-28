@@ -1,7 +1,9 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getMatches } from '@tauri-apps/plugin-cli';
 import { BaseScreen, HomeScreen, SettingsScreen, MetadataScreen, SyncScreen } from '../screens';
-import { AppSettings, loadSettings, saveSettings } from './settings';
+import { AppSettings, loadSettings, saveSettings } from './components/settings';
+import { AppActions } from './components/actions';
+import { AppBridge } from './components/bridge';
 
 
 
@@ -41,7 +43,7 @@ const elements = {
 //Start info
 const startHidden = (await getMatches()).args.hidden?.value || false;
 
-//Settings
+//Components
 const settings: AppSettings = await loadSettings();
 
 //App logic
@@ -151,22 +153,28 @@ export class App {
         }, timeout);
     }
 
-      /*$$$$$              /$$     /$$     /$$
-     /$$__  $$            | $$    | $$    |__/
-    | $$  \__/  /$$$$$$  /$$$$$$ /$$$$$$   /$$ /$$$$$$$   /$$$$$$   /$$$$$$$
-    |  $$$$$$  /$$__  $$|_  $$_/|_  $$_/  | $$| $$__  $$ /$$__  $$ /$$_____/
-     \____  $$| $$$$$$$$  | $$    | $$    | $$| $$  \ $$| $$  \ $$|  $$$$$$
-     /$$  \ $$| $$_____/  | $$ /$$| $$ /$$| $$| $$  | $$| $$  | $$ \____  $$
-    |  $$$$$$/|  $$$$$$$  |  $$$$/|  $$$$/| $$| $$  | $$|  $$$$$$$ /$$$$$$$/
-     \______/  \_______/   \___/   \___/  |__/|__/  |__/ \____  $$|_______/
-                                                         /$$  \ $$
-                                                        |  $$$$$$/
-                                                         \_____*/
+      /*$$$$$                                                                              /$$
+     /$$__  $$                                                                            | $$
+    | $$  \__/  /$$$$$$  /$$$$$$/$$$$   /$$$$$$   /$$$$$$  /$$$$$$$   /$$$$$$  /$$$$$$$  /$$$$$$   /$$$$$$$
+    | $$       /$$__  $$| $$_  $$_  $$ /$$__  $$ /$$__  $$| $$__  $$ /$$__  $$| $$__  $$|_  $$_/  /$$_____/
+    | $$      | $$  \ $$| $$ \ $$ \ $$| $$  \ $$| $$  \ $$| $$  \ $$| $$$$$$$$| $$  \ $$  | $$   |  $$$$$$
+    | $$    $$| $$  | $$| $$ | $$ | $$| $$  | $$| $$  | $$| $$  | $$| $$_____/| $$  | $$  | $$ /$$\____  $$
+    |  $$$$$$/|  $$$$$$/| $$ | $$ | $$| $$$$$$$/|  $$$$$$/| $$  | $$|  $$$$$$$| $$  | $$  |  $$$$//$$$$$$$/
+     \______/  \______/ |__/ |__/ |__/| $$____/  \______/ |__/  |__/ \_______/|__/  |__/   \___/ |_______/
+                                      | $$
+                                      | $$
+                                      |_*/
 
-    //Values
-    get settings(): any { return settings; }
+    //Components
+    private _actions: AppActions
+    private _bridge: AppBridge
 
-    //Actions
+    get actions(): AppActions { return this._actions; }
+    get bridge(): AppBridge { return this._bridge; }
+
+    //Settings
+    get settings(): AppSettings { return settings; }
+
     saveSettings = async () => {
         //Save settings
         await saveSettings(settings);
@@ -184,11 +192,14 @@ export class App {
               | $$      | $$
               |__/      |_*/
 
-
     constructor() {
         //Init app
         this.initWindow();
         this.initToolbar();
+
+        //Init components
+        this._actions = new AppActions(this);
+        this._bridge = new AppBridge(this);
 
         //Init screens
         this._homeScreen = new HomeScreen(this);

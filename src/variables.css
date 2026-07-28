@@ -8,7 +8,7 @@
 |__/    \______/ |__/  |__/   \___/ |______*/
 
 @font-face { 
-    src: url('../assets/fonts/noto-sans.woff2');
+    src: url('./assets/fonts/noto-sans.woff2');
     font-family: noto;
 }
 

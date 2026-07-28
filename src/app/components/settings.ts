@@ -1,4 +1,4 @@
-import { Util } from "../util/util";
+import { Util } from "../../util";
 import { appConfigDir, join } from '@tauri-apps/api/path';
 
 
