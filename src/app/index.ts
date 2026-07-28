@@ -2,7 +2,6 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getMatches } from '@tauri-apps/plugin-cli';
 import { BaseScreen, HomeScreen, SettingsScreen, MetadataScreen, SyncScreen } from '../screens';
 import { AppSettings, loadSettings, saveSettings } from './components/settings';
-import { AppActions } from './components/actions';
 import { AppBridge } from './components/bridge';
 
 
@@ -47,6 +46,8 @@ const startHidden = (await getMatches()).args.hidden?.value || false;
 const settings: AppSettings = await loadSettings();
 
 //App logic
+export enum AppState { Idle, ManagingSettings, ManagingMetadata, Syncing }
+
 export class App {
 
      /*$      /$$ /$$                 /$$
@@ -166,10 +167,8 @@ export class App {
                                       |_*/
 
     //Components
-    private _actions: AppActions
     private _bridge: AppBridge
 
-    get actions(): AppActions { return this._actions; }
     get bridge(): AppBridge { return this._bridge; }
 
     //Settings
@@ -192,14 +191,36 @@ export class App {
               | $$      | $$
               |__/      |_*/
 
+    //State
+    private _state: AppState = AppState.Idle;
+
+    get state() { return this._state; }
+
+    setState(newState: AppState): boolean {
+        //Check if can change state
+        if (this.state != AppState.Idle) return false;
+
+        //Change state
+        this._state = newState;
+        return true;
+    }
+
+    resetState() {
+        //Already reset
+        if (this.state == AppState.Idle) return;
+
+        //Reset state
+        this._state = AppState.Idle;
+    }
+
+    //App
     constructor() {
         //Init app
         this.initWindow();
         this.initToolbar();
 
         //Init components
-        this._actions = new AppActions(this);
-        this._bridge = new AppBridge(this);
+        this._bridge = new AppBridge();
 
         //Init screens
         this._homeScreen = new HomeScreen(this);

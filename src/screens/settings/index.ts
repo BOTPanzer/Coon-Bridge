@@ -1,7 +1,7 @@
-import type { App } from '../../app';
+import { ask, open } from '@tauri-apps/plugin-dialog';
+import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import html from './index.html?raw';
-import { ask, open } from '@tauri-apps/plugin-dialog';
 
 export class SettingsScreen extends BaseScreen {
 
@@ -47,7 +47,11 @@ export class SettingsScreen extends BaseScreen {
 
     protected onOpen(): void {}
 
-    protected onClosed(): boolean { return true; }
+    protected onClosed(): boolean {
+        //Reset app state
+        this.app.resetState();
+        return true;
+    }
 
     //Links
     private initLinksList() {

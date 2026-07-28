@@ -20,6 +20,10 @@ export class MetadataScreen extends BaseScreen {
 
     protected onOpen(): void {}
 
-    protected onClosed(): boolean { return true; }
+    protected onClosed(): boolean {
+        //Reset app state
+        this.app.resetState();
+        return true;
+    }
 
 }
