@@ -143,7 +143,7 @@ export class SettingsScreen extends BaseScreen {
             //Update link names
             const linkElements = this.linksList.querySelectorAll('.link');
             for (const [index, element] of linkElements.entries()) {
-                element.querySelector('#link-name')!.innerHTML = `Link ${index + 1}`
+                element.querySelector('#link-name')!.innerHTML = `Link ${index}`
             }
 
             //Nofify list changed
