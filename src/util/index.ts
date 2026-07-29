@@ -120,6 +120,7 @@ declare global {
         addAt(index: number, item: T): void;
         remove(item: T): number;
         removeAt(index: number): T | undefined;
+        isEmpty(): boolean;
     }
 }
 
@@ -143,6 +144,10 @@ Array.prototype.removeAt = function <T>(this: T[], index: number): T | undefined
     return this.splice(index, 1)[0];
 };
 
+Array.prototype.isEmpty = function <T>(this: T[]): boolean {
+    return this.length == 0;
+};
+
 export {};
 
 
@@ -161,6 +166,12 @@ export interface Link {
     metadataFile: string;
 }
 
+export type MetadataItem = Record<string, {
+    caption?: string;
+    labels?: string[];
+    text?: string[];
+}>;
+
 export class Album {
 
     //Info
@@ -168,10 +179,10 @@ export class Album {
     metadataFile: string
 
     items: string[] = [];
-    metadata: object = {};
+    metadata: Record<string, MetadataItem> = {};
 
     //Factory
-    constructor(link: Link, items: string[], metadata: object) {
+    constructor(link: Link, items: string[], metadata: Record<string, MetadataItem>) {
         //Save link info
         this.albumFolder = link.albumFolder;
         this.metadataFile = link.metadataFile;
@@ -182,7 +193,7 @@ export class Album {
     static async create(link: Link): Promise<Album> {
         //Temp
         let items: string[] = [];
-        let metadata: object = {};
+        let metadata: Record<string, MetadataItem> = {};
 
         //Check if album is valid
         if (await exists(link.albumFolder)) {
@@ -193,7 +204,7 @@ export class Album {
         //Check if metadata is valid
         if (await exists(link.metadataFile)) {
             //Valid -> Load metadata file info
-            metadata = await Util.readJSON(link.metadataFile);
+            metadata = await Util.readJSON(link.metadataFile) as Record<string, MetadataItem>;
         }
 
         //Create album

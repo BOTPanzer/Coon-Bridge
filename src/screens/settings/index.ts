@@ -6,10 +6,10 @@ import html from './index.html?raw';
 export class SettingsScreen extends BaseScreen {
 
     //Elements
-    syncIgnoreDeletedItemsSwitch!: HTMLInputElement
-    linksEmpty!: HTMLElement
-    linksList!: HTMLElement
-    linksAdd!: HTMLElement
+    elementSyncIgnoreDeletedItemsSwitch!: HTMLInputElement
+    elementLinksEmpty!: HTMLElement
+    elementLinksList!: HTMLElement
+    elementLinksAdd!: HTMLElement
 
     //Screen
     constructor(app: App) {
@@ -21,23 +21,25 @@ export class SettingsScreen extends BaseScreen {
 
     //State
     protected onRendered(): void {
-
         //Get elements
-        this.syncIgnoreDeletedItemsSwitch = document.getElementById('settings-syncIgnoreDeletedItems') as HTMLInputElement;
-        this.linksEmpty = document.getElementById('settings-links-empty')!;
-        this.linksList = document.getElementById('settings-links-list')!;
-        this.linksAdd = document.getElementById('settings-links-add')!;
+        this.elementSyncIgnoreDeletedItemsSwitch = document.getElementById('settings-syncIgnoreDeletedItems') as HTMLInputElement;
+        this.elementLinksEmpty = document.getElementById('settings-links-empty')!;
+        this.elementLinksList = document.getElementById('settings-links-list')!;
+        this.elementLinksAdd = document.getElementById('settings-links-add')!;
 
         //Get app
         const app = this.app;
 
         //Assign back event
-        document.getElementById('settings-back')!.onclick = () => { app.open(app.homeScreen); }
+        document.getElementById('settings-back')!.onclick = () => {
+            //Return home
+            app.open(app.homeScreen);
+        }
 
         //Sync
-        this.syncIgnoreDeletedItemsSwitch.checked = app.settings.syncIgnoreDeletedItems;
-        this.syncIgnoreDeletedItemsSwitch.oninput = async () => {
-            app.settings.syncIgnoreDeletedItems = this.syncIgnoreDeletedItemsSwitch.checked;
+        this.elementSyncIgnoreDeletedItemsSwitch.checked = app.settings.syncIgnoreDeletedItems;
+        this.elementSyncIgnoreDeletedItemsSwitch.oninput = async () => {
+            app.settings.syncIgnoreDeletedItems = this.elementSyncIgnoreDeletedItemsSwitch.checked;
             await app.saveSettings();
         }
 
@@ -56,17 +58,17 @@ export class SettingsScreen extends BaseScreen {
     //Links
     private initLinksList() {
         //Empty elements list
-        this.linksList.innerHTML = '';
+        this.elementLinksList.innerHTML = '';
 
         //Create elements
         for (const [index, link] of this.app.settings.links.entries()) {
             //Create link element
             const element = this.createLinkItem(index, link);
-            this.linksList.appendChild(element);
+            this.elementLinksList.appendChild(element);
         }
 
         //Assign "add link" event
-        this.linksAdd.onclick = async () => {
+        this.elementLinksAdd.onclick = async () => {
             //Create new link
             const link = {
                 albumFolder: '',
@@ -79,7 +81,7 @@ export class SettingsScreen extends BaseScreen {
 
             //Create link element
             const element = this.createLinkItem(index, link);
-            this.linksList.appendChild(element);
+            this.elementLinksList.appendChild(element);
 
             //Nofify list changed
             this.notifyLinksListChanged();
@@ -138,10 +140,10 @@ export class SettingsScreen extends BaseScreen {
             const index = app.settings.links.remove(link);
             if (index <= -1) return
             await app.saveSettings();
-            this.linksList.removeChild(element);
+            this.elementLinksList.removeChild(element);
 
             //Update link names
-            const linkElements = this.linksList.querySelectorAll('.link');
+            const linkElements = this.elementLinksList.querySelectorAll('.link');
             for (const [index, element] of linkElements.entries()) {
                 element.querySelector('#link-name')!.innerHTML = `Link ${index}`
             }
@@ -206,12 +208,12 @@ export class SettingsScreen extends BaseScreen {
     private notifyLinksListChanged() {
         if (this.app.settings.links.length <= 0) {
             //No links
-            this.linksEmpty.style.display = '';
-            this.linksList.style.display = 'none';
+            this.elementLinksEmpty.style.display = '';
+            this.elementLinksList.style.display = 'none';
         } else {
             //Has links
-            this.linksEmpty.style.display = 'none';
-            this.linksList.style.display = '';
+            this.elementLinksEmpty.style.display = 'none';
+            this.elementLinksList.style.display = '';
         }
     }
 

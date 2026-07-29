@@ -9,6 +9,9 @@
     <!-- Back -->
     <button id="metadata-back">Back</button>
 
+    <!-- Stats -->
+    <ul id="metadata-stats"></ul>
+
     <!-- Actions -->
     <div class="page-vc">
         <!-- Title -->
@@ -20,7 +23,7 @@
                 <div class="item-title">Search albums</div>
                 <div class="item-description">Searches for items whose metadata contains a specified query.</div>
             </div>
-            <button>Search</button>
+            <button id="metadata-search">Search</button>
         </div>
 
         <!-- Clean metadata -->
@@ -29,16 +32,16 @@
                 <div class="item-title">Clean metadata</div>
                 <div class="item-description">Removes metadata keys for files that don't exist & sorts the remaining keys by modified date.</div>
             </div>
-            <button>Start</button>
+            <button id="metadata-clean">Start</button>
         </div>
 
-        <!-- Fix metadata -->
+        <!-- Generate metadata -->
         <div class="item">
             <div class="item-text">
                 <div class="item-title">Generate metadata</div>
                 <div class="item-description">Generates metadata for all missing files or fields.</div>
             </div>
-            <button>Start</button>
+            <button id="metadata-generate">Start</button>
         </div>
     </div>
 </div>
