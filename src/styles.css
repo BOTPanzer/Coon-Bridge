@@ -522,6 +522,94 @@ loading {
 
 
 
+ /*$      /$$
+| $$$    /$$$
+| $$$$  /$$$$  /$$$$$$  /$$$$$$$  /$$   /$$  /$$$$$$$
+| $$ $$/$$ $$ /$$__  $$| $$__  $$| $$  | $$ /$$_____/
+| $$  $$$| $$| $$$$$$$$| $$  \ $$| $$  | $$|  $$$$$$
+| $$\  $ | $$| $$_____/| $$  | $$| $$  | $$ \____  $$
+| $$ \/  | $$|  $$$$$$$| $$  | $$|  $$$$$$/ /$$$$$$$/
+|__/     |__/ \_______/|__/  |__/ \______/ |______*/
+
+/* Menu backdrop (click to close) */
+dialog::backdrop {
+    /* Visuals */
+    background-color: #00000030;
+}
+
+/* Menu container */
+dialog {
+    /* Size */
+    width: 400px;
+    max-width: calc(100% - 20px);
+    max-height: calc(100% - 20px);
+    
+    /* Spacing */
+    padding: 0;
+    margin: auto;
+
+    /* Layout */
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    /* Visuals */
+    border-radius: 25px;
+    background-color: var(--surface);
+    border: none;
+    outline: none;
+    color: var(--onSurface);
+    opacity: 0;
+
+    /* Other */
+    z-index: 500;
+    user-select: none;
+    pointer-events: none;
+
+    /* Open animation */
+    &[open] {
+        /* Visuals */
+        opacity: 1;
+
+        /* Other */
+        pointer-events: auto;
+    }
+}
+
+/* Menu title */
+.menu-title {
+    /* Text */
+    /*text-transform: uppercase;*/
+    font-size: 1.4em;
+    line-height: 80px;
+}
+
+/* Menu list */
+.menu-list {
+    /* Size */
+    width: 100%;
+
+    /* Spacing */
+    margin-bottom: 20px;
+    padding: 0 20px;
+
+    /* Layout */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.menu-list > input[type="text"] {
+    /* Size */
+    width: 100%;
+}
+
+
+
  /*$$$$$$$                    /$$
 |__  $$__/                   | $$
    | $$  /$$$$$$  /$$   /$$ /$$$$$$

@@ -2,7 +2,7 @@ import { exists } from '@tauri-apps/plugin-fs';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import html from './index.html?raw';
-import { Album } from '../../util';
+import { Album, Util } from '../../util';
 
 export class MetadataScreen extends BaseScreen {
 
@@ -10,6 +10,13 @@ export class MetadataScreen extends BaseScreen {
     elementLoading!: HTMLElement
     elementContent!: HTMLElement
     elementStats!: HTMLElement
+    elementBack!: HTMLButtonElement
+    elementSearch!: HTMLButtonElement
+    elementSearchDialog!: HTMLDialogElement
+    elementSearchDialogInput!: HTMLInputElement
+    elementSearchDialogSearch!: HTMLButtonElement
+    elementClean!: HTMLButtonElement
+    elementGenerate!: HTMLButtonElement
 
     //Screen
     constructor(app: App) {
@@ -25,9 +32,16 @@ export class MetadataScreen extends BaseScreen {
         this.elementLoading = document.getElementById('metadata-loading')!;
         this.elementContent = document.getElementById('metadata-content')!;
         this.elementStats = document.getElementById('metadata-stats')!;
+        this.elementBack = document.getElementById('metadata-back') as HTMLButtonElement;
+        this.elementSearch = document.getElementById('metadata-search') as HTMLButtonElement;
+        this.elementSearchDialog = document.getElementById('metadata-search-dialog') as HTMLDialogElement;
+        this.elementSearchDialogInput = document.getElementById('metadata-search-dialog-input') as HTMLInputElement;
+        this.elementSearchDialogSearch = document.getElementById('metadata-search-dialog-search') as HTMLButtonElement;
+        this.elementClean = document.getElementById('metadata-clean') as HTMLButtonElement;
+        this.elementGenerate = document.getElementById('metadata-generate') as HTMLButtonElement;
 
-        //Add listeners
-        document.getElementById('metadata-back')!.onclick = () => {
+        //Assign back event
+        this.elementBack.onclick = () => {
             //Check if loading
             if (this.isWorking) return;
 
@@ -35,22 +49,68 @@ export class MetadataScreen extends BaseScreen {
             this.app.open(this.app.homeScreen);
         }
 
-        document.getElementById('metadata-search')!.onclick = () => {}
+        //Assign search events
+        this.elementSearch.onclick = () => {
+            //Working
+            if (this.isWorking) return;
 
-        document.getElementById('metadata-clean')!.onclick = () => {}
+            //Search
+            this.elementSearchDialog.showModal();
+        }
 
-        document.getElementById('metadata-generate')!.onclick = () => {}
+        Util.onDialogBackdropClick(this.elementSearchDialog, () => {
+            //Close dialog
+            this.elementSearchDialog.close();
+        });
+
+        this.elementSearchDialogSearch.onclick = () => {
+            //Get query
+            const query = this.elementSearchDialogInput.value;
+            if (query.length < 3) return;
+
+            //Search
+            this.search(query);
+
+            //Close dialog
+            this.elementSearchDialog.close();
+        }
+
+        //Assign clean metadata event
+        this.elementClean!.onclick = () => {
+            //Working
+            if (this.isWorking) return;
+
+            //Start working
+            this.setWorking(true);
+            setTimeout(() => {
+                //Finish working
+                this.setWorking(false);
+            }, 1000);
+        }
+
+        //Assign generate metadata event
+        this.elementGenerate!.onclick = () => {
+            //Working
+            if (this.isWorking) return;
+
+            //Start working
+            this.setWorking(true);
+            setTimeout(() => {
+                //Finish working
+                this.setWorking(false);
+            }, 1000);
+        }
     }
 
     protected onOpen(): void {
         //Start loading
-        this.isWorking = true;
+        this.setWorking(true);
         this.elementContent.setAttribute('hidden', '');
 
         //Load albums
         this.loadAlbums().then(() => {
             //Finish loading
-            this.isWorking = false;
+            this.setWorking(false);
             this.elementLoading.remove();
             this.elementContent.removeAttribute('hidden');
         });
@@ -65,8 +125,21 @@ export class MetadataScreen extends BaseScreen {
         return true;
     }
 
-    //Albums
+    //Working
     private isWorking: boolean = false;
+
+    private setWorking(working: boolean) {
+        //Update working state
+        this.isWorking = working;
+
+        //Update buttons
+        this.elementBack.disabled = working;
+        this.elementSearch.disabled = working;
+        this.elementClean.disabled = working;
+        this.elementGenerate.disabled = working;
+    }
+
+    //Albums
     private albums: Album[] = [];
 
     private itemsWithoutMetadata: string[][] = [];
@@ -128,6 +201,20 @@ export class MetadataScreen extends BaseScreen {
 
         //Show results
         this.elementStats.innerHTML = `<li>Items with metadata: ${this.itemsWithMetadataCount}</li><li>Items without metadata: ${this.itemsWithoutMetadataCount}</li>`;
+    }
+
+    private search(query: string) {
+        //Create results list
+        const results: string[] = [];
+
+        //Search all albums
+        for (const album of this.albums) {
+            const result = album.search(query);
+            results.push(...result);
+        }
+
+        //Show results
+        console.log(results);
     }
 
 }

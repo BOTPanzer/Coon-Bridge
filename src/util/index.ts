@@ -166,11 +166,13 @@ export interface Link {
     metadataFile: string;
 }
 
-export type MetadataItem = Record<string, {
+export type MetadataItem = {
     caption?: string;
     labels?: string[];
     text?: string[];
-}>;
+};
+
+export type Metadata = Record<string, MetadataItem>
 
 export class Album {
 
@@ -179,10 +181,10 @@ export class Album {
     metadataFile: string
 
     items: string[] = [];
-    metadata: Record<string, MetadataItem> = {};
+    metadata: Metadata = {};
 
     //Factory
-    constructor(link: Link, items: string[], metadata: Record<string, MetadataItem>) {
+    constructor(link: Link, items: string[], metadata: Metadata) {
         //Save link info
         this.albumFolder = link.albumFolder;
         this.metadataFile = link.metadataFile;
@@ -193,7 +195,7 @@ export class Album {
     static async create(link: Link): Promise<Album> {
         //Temp
         let items: string[] = [];
-        let metadata: Record<string, MetadataItem> = {};
+        let metadata: Metadata = {};
 
         //Check if album is valid
         if (await exists(link.albumFolder)) {
@@ -204,7 +206,7 @@ export class Album {
         //Check if metadata is valid
         if (await exists(link.metadataFile)) {
             //Valid -> Load metadata file info
-            metadata = await Util.readJSON(link.metadataFile) as Record<string, MetadataItem>;
+            metadata = await Util.readJSON(link.metadataFile) as Metadata;
         }
 
         //Create album
@@ -212,8 +214,59 @@ export class Album {
     }
 
     //Helpers
-    getItemPath(index: number): string {
+    getItemPath(name: string): string {
+        return `${this.albumFolder}\\${name}`;
+    }
+
+    getItemPathFromIndex(index: number): string {
         return `${this.albumFolder}\\${this.items[index]}`;
+    }
+
+    search(query: string): string[] {
+        //Create results list
+        const results: string[] = [];
+
+        //Check all items
+        for (const item of this.items) {
+            //Get item metadata
+            const itemMetadata = this.metadata[item];
+            if (!itemMetadata) continue;
+
+            //Check caption
+            if (itemMetadata.caption && itemMetadata.caption.toLowerCase().includes(query)) {
+                results.add(this.getItemPath(item))
+                continue;
+            }
+
+            //Check labels
+            if (itemMetadata.labels) {
+                let added = false;
+                for (const label of itemMetadata.labels) {
+                    if (label.toLowerCase().includes(query)) {
+                        results.add(this.getItemPath(item))
+                        added = true;
+                        break;
+                    }
+                }
+                if (added) continue;
+            }
+
+            //Check labels
+            if (itemMetadata.text) {
+                let added = false;
+                for (const text of itemMetadata.text) {
+                    if (text.toLowerCase().includes(query)) {
+                        results.add(this.getItemPath(item))
+                        added = true;
+                        break;
+                    }
+                }
+                if (added) continue;
+            }
+        }
+
+        //Return results
+        return results;
     }
 
 }
