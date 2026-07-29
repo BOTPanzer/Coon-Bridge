@@ -416,6 +416,37 @@ ul, ol {
     color: var(--onSurfaceAlt);
 }
 
+/* Loading indicator */
+loading {
+    --size: 30px;
+
+    /* Size */
+    min-width: var(--size); 
+    min-height: var(--size);
+    width: var(--size); 
+    height: var(--size);
+
+    /* Layout */
+    position: relative;
+    box-sizing: border-box;
+
+    /* Appearence */
+    border-radius: calc(var(--size) / 2);
+    border: 3px solid transparent;
+    border-top: 3px solid var(--accent);
+    animation: loadingAnimation 1s linear infinite;
+}
+
+@keyframes loadingAnimation {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
 
   /*$$$$$                        /$$                           /$$
  /$$__  $$                      | $$                          | $$
@@ -456,6 +487,18 @@ ul, ol {
 .page[hidden] {
     /* Appearence */
     opacity: 0;
+}
+
+.page-content {
+    /* Layout */
+    display: inherit;
+    flex-direction: inherit;
+    gap: inherit;
+}
+
+.page-content[hidden] {
+    /* Layout */
+    display: none;
 }
 
 .page-hc {

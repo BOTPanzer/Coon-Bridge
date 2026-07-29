@@ -12,10 +12,17 @@ export class MetadataScreen extends BaseScreen {
     }
 
     //Rendering
+    elementLoading!: HTMLElement
+    elementContent!: HTMLElement
+
     render(): string { return html; }
 
     //State
     protected onRendered(): void {
+        //Get views
+        this.elementLoading = document.getElementById('metadata-loading')!;
+        this.elementContent = document.getElementById('metadata-content')!;
+        
         //Add listeners
         document.getElementById('metadata-back')!.onclick = () => {
             //Check if loading
@@ -29,11 +36,14 @@ export class MetadataScreen extends BaseScreen {
     protected onOpen(): void {
         //Start loading
         this.isLoading = true;
+        this.elementContent.setAttribute('hidden', '');
 
         //Load albums
         this.loadAlbums().then(() => {
             //Finish loading
             this.isLoading = false;
+            this.elementLoading.remove();
+            this.elementContent.removeAttribute('hidden');
 
             //Test
             console.log(this.albums);
@@ -41,6 +51,9 @@ export class MetadataScreen extends BaseScreen {
     }
 
     protected onClosed(): boolean {
+        //Clear albums
+        this.clearAlbums();
+
         //Reset app state
         this.app.resetState();
         return true;

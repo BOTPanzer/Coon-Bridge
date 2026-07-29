@@ -1,61 +1,67 @@
-<!-- Screen -->
+<!-- Title -->
 <h1>Settings</h1>
-<button id="settings-back">Back</button>
 
-<!-- App -->
-<div class="page-vc">
-    <!-- Title -->
-    <h2>App</h2>
+<!-- Content -->
+<div class="page-content">
+    <!-- Back -->
+     <button id="settings-back">Back</button>
 
-    <!-- Start with windows -->
-    <div class="item">
-        <div class="item-text">
-            <div class="item-title">Start with Windows</div>
-            <div class="item-description">Load the app in the background when Windows starts.</div>
+    <!-- App -->
+    <div class="page-vc">
+        <!-- Title -->
+        <h2>App</h2>
+
+        <!-- Start with windows -->
+        <div class="item">
+            <div class="item-text">
+                <div class="item-title">Start with Windows</div>
+                <div class="item-description">Load the app in the background when Windows starts.</div>
+            </div>
+            <input type="checkbox" disabled>
         </div>
-        <input type="checkbox" disabled>
+    </div>
+
+    <!-- Sync -->
+    <div class="page-vc">
+        <!-- Title -->
+        <h2>Sync</h2>
+
+        <!-- Ignore deleted phone items -->
+        <div class="item">
+            <div class="item-text">
+                <div class="item-title">Ignore deleted phone images</div>
+                <div class="item-description">Ignore deleted phone images when syncing albums. If not ignored, deleting an image in your phone will delete in your PC too.</div>
+            </div>
+            <input id="settings-syncIgnoreDeletedItems" type="checkbox">
+        </div>
+    </div>
+
+    <!-- Links -->
+    <div class="page-vc">
+        <!-- Title -->
+        <h2>Links</h2>
+
+        <!-- Description -->
+        <span class="item-description">
+            A <b>link</b> is formed by an <b>album folder</b> and a <b>metadata file</b>.
+            <ul>
+                <li>Add an album folder to enable backing it up.</li>
+                <li>Add a metadata file to enable generating metadata for its album.</li>
+            </ul>
+            <br>
+            Make sure you add links in the same order as in the phone app.
+        </span>
+
+        <!-- Items -->
+        <span id="settings-links-empty">No links</span>
+        <div id="settings-links-list" class="page-vc"></div>
+
+        <!-- Add --> 
+        <button id="settings-links-add">Add</button>
     </div>
 </div>
 
-<!-- Sync -->
-<div class="page-vc">
-    <!-- Title -->
-    <h2>Sync</h2>
-
-    <!-- Ignore deleted phone items -->
-    <div class="item">
-        <div class="item-text">
-            <div class="item-title">Ignore deleted phone images</div>
-            <div class="item-description">Ignore deleted phone images when syncing albums. If not ignored, deleting an image in your phone will delete in your PC too.</div>
-        </div>
-        <input id="settings-syncIgnoreDeletedItems" type="checkbox">
-    </div>
-</div>
-
-<!-- Links -->
- <div class="page-vc">
-    <!-- Title -->
-    <h2>Links</h2>
-
-    <!-- Description -->
-    <span class="item-description">
-        A <b>link</b> is formed by an <b>album folder</b> and a <b>metadata file</b>.
-        <ul>
-            <li>Add an album folder to enable backing it up.</li>
-            <li>Add a metadata file to enable generating metadata for its album.</li>
-        </ul>
-        <br>
-        Make sure you add links in the same order as in the phone app.
-    </span>
-
-    <!-- Items -->
-    <span id="settings-links-empty">No links</span>
-    <div id="settings-links-list" class="page-vc"></div>
-
-    <!-- Add --> 
-    <button id="settings-links-add">Add</button>
-</div>
-
+<!-- Style -->
 <style>
     /* Links */
     .link {
