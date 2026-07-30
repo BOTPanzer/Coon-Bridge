@@ -220,15 +220,19 @@ export class MetadataScreen extends BaseScreen {
         this.clearSearch();
         this.elementSearchResults.style.display = '';
 
+        //Add title & clear button
+        const title = document.createElement('h2');
+        title.innerText = 'Search results';
+        this.elementSearchResults.appendChild(title);
+
+        const button = document.createElement('button');
+        button.innerText = 'Clear search';
+        button.onclick = () => this.clearSearch();
+        this.elementSearchResults.appendChild(button);
+
         //Check results
         if (!results.isEmpty()) {
-            //Not empty -> Add clear button
-            const button = document.createElement('button');
-            button.innerText = 'Clear search';
-            button.onclick = () => this.clearSearch();
-            this.elementSearchResults.appendChild(button);
-
-            //Add images
+            //Has results -> Add images
             for (const result of results) {
                 const img = document.createElement('img');
                 img.src = convertFileSrc(result.getPath());
@@ -243,7 +247,7 @@ export class MetadataScreen extends BaseScreen {
         } else {
             //Empty -> Add text
             const text = document.createElement('span');
-            text.innerText = 'There are no results';
+            text.innerText = 'There are no results.';
             this.elementSearchResults.appendChild(text);
         }
     }
