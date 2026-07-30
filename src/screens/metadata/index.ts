@@ -321,12 +321,21 @@ export class MetadataScreen extends BaseScreen {
                 if (!itemMetadata.caption) {
                     console.log(`Generating caption...`);
                     itemMetadata.caption = await descriptionModel.generateCaption(image);
+                    hasCaption = true;
                 }
 
                 //Fix labels
                 if (!itemMetadata.labels) {
                     console.log(`Generating labels...`);
                     itemMetadata.labels = await descriptionModel.generateLabels(image);
+                    hasLabels = true;
+                }
+
+                //Fix text
+                if (!itemMetadata.text) {
+                    console.log(`Detecting text...`);
+                    itemMetadata.text = await descriptionModel.generateText(image);
+                    hasText = true;
                 }
 
                 //Update metadata

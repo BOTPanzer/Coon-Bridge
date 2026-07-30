@@ -86,4 +86,14 @@ export class DescriptionModel {
         return Array.from(new Set(labels)); //Remove repeated items
     }
 
+    async generateText(image: RawImage): Promise<string[]> {
+        const task = '<OCR_WITH_REGION>';
+        const result = await this.run(image, task);
+        const text: string[] = result[task]?.labels ?? [];
+        const textFixed: string[] = text
+            .map(text => text.trim())
+            .filter(text => text.length > 0);
+        return Array.from(new Set(textFixed)); //Remove repeated items
+    }
+
 }
