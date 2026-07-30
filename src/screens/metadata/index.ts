@@ -1,4 +1,3 @@
-import { exists } from '@tauri-apps/plugin-fs';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
@@ -84,12 +83,8 @@ export class MetadataScreen extends BaseScreen {
             //Working
             if (this.isWorking) return;
 
-            //Start working
-            this.setWorking(true);
-            setTimeout(() => {
-                //Finish working
-                this.setWorking(false);
-            }, 1000);
+            //Clean metadata
+            this.cleanMetadata();
         }
 
         //Assign generate metadata event
@@ -157,7 +152,7 @@ export class MetadataScreen extends BaseScreen {
         //Check if links are valid
         for (const link of links) {
             //Check if album folder or metadata file do not exist
-            if (!(await exists(link.albumFolder)) || !(await exists(link.metadataFile))) {
+            if (!(await Util.existsFile(link.albumFolder)) || !(await Util.existsFile(link.metadataFile))) {
                 console.log('Please make sure all links have a valid album folder and metadata file!');
                 return;
             }
@@ -171,7 +166,7 @@ export class MetadataScreen extends BaseScreen {
         }
 
         //Count items
-        await this.countItemsWithMetadata();
+        this.countItemsWithMetadata();
     }
 
     private clearAlbums() {
@@ -179,7 +174,7 @@ export class MetadataScreen extends BaseScreen {
         this.albums = [];
     }
 
-    private async countItemsWithMetadata() {
+    private countItemsWithMetadata() {
         //Items without metadata
         this.itemsWithoutMetadata = [];
         this.itemsWithoutMetadataCount = 0;
@@ -193,7 +188,7 @@ export class MetadataScreen extends BaseScreen {
 
             //Look for items without metadata in this album
             for (const item of album.items) {
-                const itemMetadata = album.metadata[item.name];
+                const itemMetadata = album.getItemMetadata(item.name);
                 if (!itemMetadata || !itemMetadata.caption || !itemMetadata.labels || !itemMetadata.text) {
                     albumItemsWithoutMetadata.add(item);
                     this.itemsWithoutMetadataCount++;
@@ -207,6 +202,7 @@ export class MetadataScreen extends BaseScreen {
         this.elementStats.innerHTML = `<li>Items with metadata: ${this.itemsWithMetadataCount}</li><li>Items without metadata: ${this.itemsWithoutMetadataCount}</li>`;
     }
 
+    //Search
     private search(query: string) {
         //Create results list
         const results: Item[] = [];
@@ -256,6 +252,21 @@ export class MetadataScreen extends BaseScreen {
         //Clear & hide results
         this.elementSearchResults.innerHTML = '';
         this.elementSearchResults.style.display = 'none';
+    }
+
+    //Metadata management
+    private cleanMetadata() {
+        //Start working
+        this.setWorking(true);
+
+        //Clean metadata
+        for (const album of this.albums) {
+            album.cleanMetadata();
+            album.saveMetadata();
+        }
+
+        //Finish working
+        this.setWorking(false);
     }
 
 }

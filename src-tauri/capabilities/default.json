@@ -27,6 +27,11 @@
         {
             "identifier": "fs:allow-mkdir",
             "allow": [{ "path": "**" }]
+        },
+        "fs:allow-rename",
+        {
+            "identifier": "fs:allow-rename",
+            "allow": [{ "path": "**" }]
         }
     ]
 }
