@@ -108,4 +108,8 @@ export class Util {
         await rename(oldPath, newPath);
     }
 
+    static async createFolder(path: string) {
+        await mkdir(path, { recursive: true });
+    }
+
 }

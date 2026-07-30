@@ -1,5 +1,5 @@
 import { Util, Link } from "../../util";
-import { appConfigDir, join } from '@tauri-apps/api/path';
+import { appDataDir, join } from '@tauri-apps/api/path';
 
 
 
@@ -22,7 +22,7 @@ export interface AppSettings {
 }
 
 //Settings file
-const settingsPath = await join(await appConfigDir(), 'settings.json');
+const settingsPath = await join(await appDataDir(), 'settings.json');
 
 export async function loadSettings(): Promise<AppSettings> {
     //Read file

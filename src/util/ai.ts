@@ -5,11 +5,11 @@ import {
     Florence2Processor,
     RawImage,
     PreTrainedModel
-} from "@huggingface/transformers";
+} from '@huggingface/transformers';
 
 export class DescriptionModel {
 
-    private modelId: string = 'onnx-community/Florence-2-base-ft';
+    private modelId: string = 'onnx-community/Florence-2-large-ft';
     private processor: Florence2Processor | null = null;
     private model: PreTrainedModel | null = null;
 
@@ -17,7 +17,7 @@ export class DescriptionModel {
         //Check if already loaded
         if (this.processor && this.model) return;
 
-        //Load processor
+        //Load processor & model
         console.log('Loading description model...');
         this.processor = (await AutoProcessor.from_pretrained(this.modelId)) as Florence2Processor;
         this.model = await Florence2ForConditionalGeneration.from_pretrained(
@@ -33,8 +33,9 @@ export class DescriptionModel {
             }
         );
     }
-    
+
     async unload(): Promise<void> {
+        //Unload processor & model
         if (this.model) {
             await this.model.dispose();
             this.model = null;
