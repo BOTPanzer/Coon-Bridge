@@ -3,8 +3,10 @@ use tauri::{
     tray::TrayIconBuilder,
     Manager, WindowEvent,
 };
+use serde::Serialize;
 use std::fs;
 use std::path::Path;
+use std::time::UNIX_EPOCH;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -62,13 +64,20 @@ pub fn run() {
 }
 
 //Custom API
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct FileItem {
+    name: String,
+    last_modified: u64,
+}
+
 #[tauri::command]
-fn list_folder_items(folder_path: String, allow_videos: bool) -> Result<Vec<String>, String> {
+fn list_folder_items(folder_path: String, allow_videos: bool) -> Result<Vec<FileItem>, String> {
     //Get dir
     let dir = Path::new(&folder_path);
 
     //List entries
-    let mut entries: Vec<_> = fs::read_dir(dir)
+    let mut entries: Vec<FileItem> = fs::read_dir(dir)
         .map_err(|e| e.to_string())?
         .filter_map(|res| res.ok())
         .filter(|entry| {
@@ -89,16 +98,21 @@ fn list_folder_items(folder_path: String, allow_videos: bool) -> Result<Vec<Stri
             is_file && (is_image || is_video)
         })
         .map(|entry| {
-            let mtime = entry.metadata()
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let last_modified = entry
+                .metadata()
                 .and_then(|m| m.modified())
-                .ok();
-            (entry.file_name().to_string_lossy().into_owned(), mtime)
+                .ok()
+                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0);
+            FileItem { name, last_modified }
         })
         .collect();
 
     //Sort newest first
-    entries.sort_by(|a, b| b.1.cmp(&a.1));
+    entries.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
 
     //Return entries
-    Ok(entries.into_iter().map(|(name, _)| name).collect())
+    Ok(entries)
 }

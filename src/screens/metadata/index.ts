@@ -1,8 +1,9 @@
 import { exists } from '@tauri-apps/plugin-fs';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import html from './index.html?raw';
-import { Album, Util } from '../../util';
+import { Album, Item, Util } from '../../util';
 
 export class MetadataScreen extends BaseScreen {
 
@@ -15,6 +16,7 @@ export class MetadataScreen extends BaseScreen {
     elementSearchDialog!: HTMLDialogElement
     elementSearchDialogInput!: HTMLInputElement
     elementSearchDialogSearch!: HTMLButtonElement
+    elementSearchResults!: HTMLElement
     elementClean!: HTMLButtonElement
     elementGenerate!: HTMLButtonElement
 
@@ -37,6 +39,7 @@ export class MetadataScreen extends BaseScreen {
         this.elementSearchDialog = document.getElementById('metadata-search-dialog') as HTMLDialogElement;
         this.elementSearchDialogInput = document.getElementById('metadata-search-dialog-input') as HTMLInputElement;
         this.elementSearchDialogSearch = document.getElementById('metadata-search-dialog-search') as HTMLButtonElement;
+        this.elementSearchResults = document.getElementById('metadata-search-results')!;
         this.elementClean = document.getElementById('metadata-clean') as HTMLButtonElement;
         this.elementGenerate = document.getElementById('metadata-generate') as HTMLButtonElement;
 
@@ -55,6 +58,7 @@ export class MetadataScreen extends BaseScreen {
             if (this.isWorking) return;
 
             //Search
+            this.elementSearchDialogInput.value = '';
             this.elementSearchDialog.showModal();
         }
 
@@ -142,7 +146,7 @@ export class MetadataScreen extends BaseScreen {
     //Albums
     private albums: Album[] = [];
 
-    private itemsWithoutMetadata: string[][] = [];
+    private itemsWithoutMetadata: Item[][] = [];
     private itemsWithoutMetadataCount: number = 0;
     private itemsWithMetadataCount: number = 0;
 
@@ -184,12 +188,12 @@ export class MetadataScreen extends BaseScreen {
         //Look for items without metadata
         for (const album of this.albums) {
             //Create list of items without metadata in this album
-            const albumItemsWithoutMetadata: string[] = [];
+            const albumItemsWithoutMetadata: Item[] = [];
             this.itemsWithoutMetadata.add(albumItemsWithoutMetadata);
 
             //Look for items without metadata in this album
             for (const item of album.items) {
-                const itemMetadata = album.metadata[item];
+                const itemMetadata = album.metadata[item.name];
                 if (!itemMetadata || !itemMetadata.caption || !itemMetadata.labels || !itemMetadata.text) {
                     albumItemsWithoutMetadata.add(item);
                     this.itemsWithoutMetadataCount++;
@@ -205,7 +209,7 @@ export class MetadataScreen extends BaseScreen {
 
     private search(query: string) {
         //Create results list
-        const results: string[] = [];
+        const results: Item[] = [];
 
         //Search all albums
         for (const album of this.albums) {
@@ -213,8 +217,45 @@ export class MetadataScreen extends BaseScreen {
             results.push(...result);
         }
 
-        //Show results
-        console.log(results);
+        //Sort results
+        results.sort((a, b) => b.lastModified - a.lastModified);
+
+        //Prepare UI
+        this.clearSearch();
+        this.elementSearchResults.style.display = '';
+
+        //Check results
+        if (!results.isEmpty()) {
+            //Not empty -> Add clear button
+            const button = document.createElement('button');
+            button.innerText = 'Clear search';
+            button.onclick = () => this.clearSearch();
+            this.elementSearchResults.appendChild(button);
+
+            //Add images
+            for (const result of results) {
+                const img = document.createElement('img');
+                img.src = convertFileSrc(result.getPath());
+                img.loading = 'lazy';
+                img.decoding = 'async';
+                img.classList.add('image');
+                img.onload = () => {
+                    img.setAttribute('loaded', '');
+                }
+                this.elementSearchResults.appendChild(img);
+            }
+        } else {
+            //Empty -> Add text
+            const text = document.createElement('span');
+            text.innerText = 'There are no results';
+            this.elementSearchResults.appendChild(text);
+        }
+    }
+
+    private clearSearch() {
+        //Clear & hide results
+        this.elementSearchResults.innerHTML = '';
+        this.elementSearchResults.style.display = 'none';
     }
 
 }

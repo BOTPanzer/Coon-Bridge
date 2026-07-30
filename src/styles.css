@@ -557,7 +557,7 @@ dialog {
     /* Visuals */
     border-radius: 25px;
     background-color: var(--surface);
-    border: none;
+    border: var(--borderSoftThick);
     outline: none;
     color: var(--onSurface);
     opacity: 0;

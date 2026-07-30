@@ -174,33 +174,74 @@ export type MetadataItem = {
 
 export type Metadata = Record<string, MetadataItem>
 
+export class Item {
+
+    //Info
+    private _name: string
+    private _lastModified: number
+    private _album!: Album
+
+    get name(): string { return this._name; }
+    get lastModified(): number { return this._lastModified; }
+    get album(): Album { return this._album; }
+
+    //Item
+    constructor(name: string, lastModified: number) {
+        //Save info
+        this._name = name;
+        this._lastModified = lastModified;
+    }
+
+    assignAlbum(album: Album) {
+        this._album = album;
+    }
+
+    //Helpers
+    getPath(): string {
+        return `${this.album.albumFolder}\\${this.name}`;
+    }
+
+}
+
 export class Album {
 
     //Info
-    albumFolder: string
-    metadataFile: string
+    private _albumFolder: string
+    private _metadataFile: string
 
-    items: string[] = [];
-    metadata: Metadata = {};
+    get albumFolder(): string { return this._albumFolder; }
+    get metadataFile(): string { return this._metadataFile; }
+
+    private _items: Item[] = [];
+    private _metadata: Metadata = {};
+
+    get items(): readonly Item[] { return this._items; }
+    get metadata(): Metadata { return this._metadata; }
 
     //Factory
-    constructor(link: Link, items: string[], metadata: Metadata) {
-        //Save link info
-        this.albumFolder = link.albumFolder;
-        this.metadataFile = link.metadataFile;
-        this.items = items;
-        this.metadata = metadata;
+    constructor(link: Link, items: Item[], metadata: Metadata) {
+        //Save info
+        this._albumFolder = link.albumFolder;
+        this._metadataFile = link.metadataFile;
+        this._items = items;
+        this._metadata = metadata;
+
+        //Assign album to items
+        for (const item of items) {
+            item.assignAlbum(this);
+        }
     }
 
     static async create(link: Link): Promise<Album> {
         //Temp
-        let items: string[] = [];
+        let items: Item[] = [];
         let metadata: Metadata = {};
 
         //Check if album is valid
         if (await exists(link.albumFolder)) {
             //Valid -> Get all allowed files in the album folder
-            items = await invoke<string[]>('list_folder_items', { folderPath: link.albumFolder, allowVideos: false });
+            const itemsData = await invoke<{ name: string; lastModified: number }[]>('list_folder_items', { folderPath: link.albumFolder, allowVideos: false });
+            items = itemsData.map(data => new Item(data.name, data.lastModified));
         }
 
         //Check if metadata is valid
@@ -213,28 +254,20 @@ export class Album {
         return new Album(link, items, metadata);
     }
 
-    //Helpers
-    getItemPath(name: string): string {
-        return `${this.albumFolder}\\${name}`;
-    }
-
-    getItemPathFromIndex(index: number): string {
-        return `${this.albumFolder}\\${this.items[index]}`;
-    }
-
-    search(query: string): string[] {
+    //Actions
+    search(query: string): Item[] {
         //Create results list
-        const results: string[] = [];
+        const results: Item[] = [];
 
         //Check all items
         for (const item of this.items) {
             //Get item metadata
-            const itemMetadata = this.metadata[item];
+            const itemMetadata = this.metadata[item.name];
             if (!itemMetadata) continue;
 
             //Check caption
             if (itemMetadata.caption && itemMetadata.caption.toLowerCase().includes(query)) {
-                results.add(this.getItemPath(item))
+                results.add(item)
                 continue;
             }
 
@@ -243,7 +276,7 @@ export class Album {
                 let added = false;
                 for (const label of itemMetadata.labels) {
                     if (label.toLowerCase().includes(query)) {
-                        results.add(this.getItemPath(item))
+                        results.add(item)
                         added = true;
                         break;
                     }
@@ -256,7 +289,7 @@ export class Album {
                 let added = false;
                 for (const text of itemMetadata.text) {
                     if (text.toLowerCase().includes(query)) {
-                        results.add(this.getItemPath(item))
+                        results.add(item)
                         added = true;
                         break;
                     }

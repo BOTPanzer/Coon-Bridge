@@ -44,13 +44,44 @@
             <button id="metadata-generate">Start</button>
         </div>
     </div>
+
+    <!-- Search dialog -->
+    <dialog id="metadata-search-dialog">
+        <span class="menu-title">Search</span>
+        <form class="menu-list" onsubmit="event.preventDefault()">
+            <input id="metadata-search-dialog-input" type="text" autocomplete="off" placeholder="Search query (3+ characters)">
+            <button id="metadata-search-dialog-search">Search</button>
+        </form>
+    </dialog>
+
+    <!-- Search results -->
+    <div id="metadata-search-results" class="page-vc" style="display: none;"></div>
 </div>
 
-<!-- Search -->
-<dialog id="metadata-search-dialog">
-    <span class="menu-title">Search</span>
-    <div class="menu-list">
-        <input id="metadata-search-dialog-input" type="text" placeholder="Search query (3+ characters)">
-        <button id="metadata-search-dialog-search">Search</button>
-    </div>
-</dialog>
+<!-- Style -->
+<style>
+    /* Images */
+    .image {
+        /* Size */
+        width: max-content;
+        max-height: 60vh;
+        aspect-ratio: 1;
+
+        /* Appearence */
+        border-radius: 10px;
+        background-color: var(--onSurface);
+        opacity: 0;
+        object-fit: contain;
+
+        /* Other */
+        transition: opacity .5s;
+    }
+
+    .image[loaded] {
+        /* Size */
+        aspect-ratio: unset;
+
+        /* Appearence */
+        opacity: 1;
+    }
+</style>

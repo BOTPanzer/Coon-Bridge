@@ -31,14 +31,14 @@
     --background: #191724;
     --onBackground: #e0def4;
     --onBackgroundFilter: brightness(0) saturate(100%) invert(91%) sepia(3%) saturate(1449%) hue-rotate(205deg) brightness(98%) contrast(95%);
-    --onBackgroundAlt: #bab9c2;
-    --onBackgroundFilter: brightness(0) saturate(100%) invert(79%) sepia(3%) saturate(597%) hue-rotate(207deg) brightness(97%) contrast(86%);
+    --onBackgroundAlt: #da9fbc;
+    --onBackgroundFilter: brightness(0) saturate(100%) invert(100%) sepia(25%) saturate(5975%) hue-rotate(281deg) brightness(90%) contrast(89%);
 
     --surface: #26233a;
     --onSurface: #e0def4;
     --onSurfaceFilter: brightness(0) saturate(100%) invert(91%) sepia(3%) saturate(1449%) hue-rotate(205deg) brightness(98%) contrast(95%);
-    --onSurfaceAlt: #bab9c2;
-    --onSurfaceFilter: brightness(0) saturate(100%) invert(79%) sepia(3%) saturate(597%) hue-rotate(207deg) brightness(97%) contrast(86%);
+    --onSurfaceAlt: #da9fbc;
+    --onSurfaceFilter: brightness(0) saturate(100%) invert(100%) sepia(25%) saturate(5975%) hue-rotate(281deg) brightness(90%) contrast(89%);
 
     /* Text */
     --textSize: 16px;
@@ -49,6 +49,12 @@
     --hover: color-mix(in srgb, var(--onBackground) 15%, transparent);
     --accent: #d46083;
     --selection: #b14d6b;
+
+    /* Borders */
+    --borderTransparent: solid 1px transparent;
+    --border: solid 1px var(--onBackground);
+    --borderSoft: solid 1px var(--hover);
+    --borderSoftThick: solid 2px var(--hover);
 }
 
 *[theme="surface"] {
