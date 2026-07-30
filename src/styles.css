@@ -577,6 +577,11 @@ dialog {
     }
 }
 
+dialog:not(:modal) {
+    /* Layout */
+    display: none;
+}
+
 /* Menu title */
 .menu-title {
     /* Text */
