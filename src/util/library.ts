@@ -58,6 +58,10 @@ export class Item {
         return `${this.album.albumFolder}\\${this.name}`;
     }
 
+    getMetadata(): MetadataItem {
+        return this.album.getItemMetadata(this.name);
+    }
+
 }
 
 export class Album {

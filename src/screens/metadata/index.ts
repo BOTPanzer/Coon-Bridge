@@ -2,7 +2,8 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import html from './index.html?raw';
-import { Album, Item, Util } from '../../util';
+import { Album, DescriptionModel, Item, Util } from '../../util';
+import { load_image } from '@huggingface/transformers';
 
 export class MetadataScreen extends BaseScreen {
 
@@ -17,7 +18,7 @@ export class MetadataScreen extends BaseScreen {
     elementSearchDialogSearch!: HTMLButtonElement
     elementSearchResults!: HTMLElement
     elementClean!: HTMLButtonElement
-    elementGenerate!: HTMLButtonElement
+    elementFix!: HTMLButtonElement
 
     //Screen
     constructor(app: App) {
@@ -40,7 +41,7 @@ export class MetadataScreen extends BaseScreen {
         this.elementSearchDialogSearch = document.getElementById('metadata-search-dialog-search') as HTMLButtonElement;
         this.elementSearchResults = document.getElementById('metadata-search-results')!;
         this.elementClean = document.getElementById('metadata-clean') as HTMLButtonElement;
-        this.elementGenerate = document.getElementById('metadata-generate') as HTMLButtonElement;
+        this.elementFix = document.getElementById('metadata-fix') as HTMLButtonElement;
 
         //Assign back event
         this.elementBack.onclick = () => {
@@ -83,21 +84,29 @@ export class MetadataScreen extends BaseScreen {
             //Working
             if (this.isWorking) return;
 
+            //Start working
+            this.setWorking(true);
+
             //Clean metadata
-            this.cleanMetadata();
+            this.cleanMetadata().then(() => {
+                //Finish working
+                this.setWorking(false);
+            });
         }
 
-        //Assign generate metadata event
-        this.elementGenerate!.onclick = () => {
+        //Assign fix metadata event
+        this.elementFix!.onclick = () => {
             //Working
             if (this.isWorking) return;
 
             //Start working
             this.setWorking(true);
-            setTimeout(() => {
+
+            //Fix metadata
+            this.fixMetadata().then(() => {
                 //Finish working
                 this.setWorking(false);
-            }, 1000);
+            });
         }
     }
 
@@ -135,15 +144,11 @@ export class MetadataScreen extends BaseScreen {
         this.elementBack.disabled = working;
         this.elementSearch.disabled = working;
         this.elementClean.disabled = working;
-        this.elementGenerate.disabled = working;
+        this.elementFix.disabled = working;
     }
 
     //Albums
     private albums: Album[] = [];
-
-    private itemsWithoutMetadata: Item[][] = [];
-    private itemsWithoutMetadataCount: number = 0;
-    private itemsWithMetadataCount: number = 0;
 
     private async loadAlbums() {
         //Get links
@@ -174,19 +179,24 @@ export class MetadataScreen extends BaseScreen {
         this.albums = [];
     }
 
+    //Stats
+    private itemsWithoutMetadata: Item[][] = [];
+    private itemsWithoutMetadataCount: number = 0;
+    private itemsWithMetadataCount: number = 0;
+
     private countItemsWithMetadata() {
         //Items without metadata
         this.itemsWithoutMetadata = [];
         this.itemsWithoutMetadataCount = 0;
         this.itemsWithMetadataCount = 0;
 
-        //Look for items without metadata
+        //Check albums
         for (const album of this.albums) {
             //Create list of items without metadata in this album
             const albumItemsWithoutMetadata: Item[] = [];
             this.itemsWithoutMetadata.add(albumItemsWithoutMetadata);
 
-            //Look for items without metadata in this album
+            //Look for its items without metadata
             for (const item of album.items) {
                 const itemMetadata = album.getItemMetadata(item.name);
                 if (!itemMetadata || !itemMetadata.caption || !itemMetadata.labels || !itemMetadata.text) {
@@ -198,7 +208,12 @@ export class MetadataScreen extends BaseScreen {
             }
         }
 
-        //Show results
+        //Show stats
+        this.notifyItemsWithMetadataChanged();
+    }
+
+    private notifyItemsWithMetadataChanged() {
+        //Show stats
         this.elementStats.innerHTML = `<li>Items with metadata: ${this.itemsWithMetadataCount}</li><li>Items without metadata: ${this.itemsWithoutMetadataCount}</li>`;
     }
 
@@ -259,18 +274,89 @@ export class MetadataScreen extends BaseScreen {
     }
 
     //Metadata management
-    private cleanMetadata() {
+    private async cleanMetadata() {
         //Start working
         this.setWorking(true);
 
         //Clean metadata
         for (const album of this.albums) {
             album.cleanMetadata();
-            album.saveMetadata();
+            await album.saveMetadata();
         }
 
         //Finish working
         this.setWorking(false);
+    }
+
+    private async fixMetadata() {
+        //Create models
+        const descriptionModel: DescriptionModel = new DescriptionModel()
+
+        //Fix items
+        for (const [albumIndex, itemsWithoutMetadata] of this.itemsWithoutMetadata.entries()) {
+            //Check if any need fixing
+            if (itemsWithoutMetadata.isEmpty()) continue;
+
+            //Get album
+            const album: Album = this.albums[albumIndex];
+            let albumWasSaved: boolean = false;
+            let itemsFixedCount: number = 0;
+
+            //Fix album items
+            for (let i = itemsWithoutMetadata.length - 1; i >= 0; i--) {
+                //Get item info
+                const item = itemsWithoutMetadata[i];
+                console.log(`- ${item.name}`);
+
+                //Get metadata info
+                const itemMetadata = item.getMetadata();
+                let hasCaption: boolean = typeof itemMetadata.caption == 'string';
+                let hasLabels: boolean = Array.isArray(itemMetadata.labels);
+                let hasText: boolean = Array.isArray(itemMetadata.text);
+
+                //Load image
+                const image = await load_image(convertFileSrc(item.getPath()));
+
+                //Fix caption
+                if (!itemMetadata.caption) {
+                    console.log(`Generating caption...`);
+                    itemMetadata.caption = await descriptionModel.generateCaption(image);
+                }
+
+                //Fix labels
+                if (!itemMetadata.labels) {
+                    console.log(`Generating labels...`);
+                    itemMetadata.labels = await descriptionModel.generateLabels(image);
+                }
+
+                //Update metadata
+                album.setItemMetadata(item.name, itemMetadata);
+
+                //Check if fixed
+                if (!hasCaption || !hasLabels || !hasText) continue;
+
+                //Mark as fixed
+                itemsWithoutMetadata.removeAt(i);
+                this.itemsWithoutMetadataCount--;
+                this.itemsWithMetadataCount++;
+                this.notifyItemsWithMetadataChanged();
+                itemsFixedCount++;
+
+                //Check if should save
+                if (itemsFixedCount % 5 == 0) {
+                    //Save
+                    await album.saveMetadata(!albumWasSaved);
+                    albumWasSaved = true;
+                }
+            }
+
+            //Sort album metadata keys & save
+            album.cleanMetadata();
+            await album.saveMetadata(!albumWasSaved);
+        }
+
+        //Unload models
+        await descriptionModel.unload();
     }
 
 }

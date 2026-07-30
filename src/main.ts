@@ -1,3 +1,4 @@
 import { App } from './app'
 
-new App()
+const app = new App();
+(window as any).app = app;
