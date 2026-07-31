@@ -40,7 +40,7 @@ const elements = {
           |__/      |_*/
 
 //Start info
-const startHidden = (await getMatches()).args.hidden?.value || false;
+const startHidden = (await getMatches()).args.hidden?.value ?? false;
 
 //Components
 const settings: AppSettings = await loadSettings();
@@ -131,7 +131,7 @@ export class App {
         this.isChangingScreen = true;
 
         //Close current screen
-        const closed = this.currentScreen?.close() || true;
+        const closed = this.currentScreen?.close() ?? true;
         if (!closed) {
             this.isChangingScreen = false;
             return;
@@ -221,6 +221,7 @@ export class App {
 
         //Init components
         this._bridge = new AppBridge();
+        this.bridge.start();
 
         //Init screens
         this._homeScreen = new HomeScreen(this);

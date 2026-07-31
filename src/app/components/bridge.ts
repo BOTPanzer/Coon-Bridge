@@ -1,12 +1,5 @@
-export enum BridgeState { Offline, Online, Connected }
+import { Server } from '../../util';
 
-export class AppBridge {
-
-    constructor() {}
-
-    //State
-    private _state: BridgeState = BridgeState.Offline;
-
-    get state() { return this._state; }
-
+export class AppBridge extends Server {
+    
 }

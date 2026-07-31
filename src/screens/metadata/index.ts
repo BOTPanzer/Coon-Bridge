@@ -223,6 +223,39 @@ export class MetadataScreen extends BaseScreen {
         this.elementStats.innerHTML = `<li>Items with metadata: ${this.itemsWithMetadataCount}</li><li>Items without metadata: ${this.itemsWithoutMetadataCount}</li>`;
     }
 
+    //Logs
+    private maxLogs: number = 1000;
+    private logs: string[] = [];
+
+    private log(text: string) {
+        //Add log
+        console.log(text);
+        this.logs.add(text);
+        this.elementLogs.appendChild(this.createLogElement(text));
+
+        //Check if max length exceeded
+        if (this.logs.length > this.maxLogs) {
+            //Exceeded -> Remove first
+            this.logs.removeAt(0);
+            this.elementLogs.removeChild(this.elementLogs.children[0]);
+        }
+
+        //Scroll to bottom
+        this.elementLogs.scrollTop = this.elementLogs.scrollHeight;
+    }
+
+    private clearLogs() {
+        //Clear list
+        this.logs = [];
+    }
+
+    private createLogElement(text: string): HTMLElement {
+        const element = document.createElement('span');
+        element.classList.add('log');
+        element.innerText = text;
+        return element;
+    }
+
     //Search
     private search(query: string) {
         //Create results list
@@ -374,39 +407,6 @@ export class MetadataScreen extends BaseScreen {
 
         //Unload models
         await descriptionModel.unload();
-    }
-
-    //Logs
-    private maxLogs: number = 1000;
-    private logs: string[] = [];
-
-    private log(text: string) {
-        //Add log
-        console.log(text);
-        this.logs.add(text);
-        this.elementLogs.appendChild(this.createLogElement(text));
-
-        //Check if max length exceeded
-        if (this.logs.length > this.maxLogs) {
-            //Exceeded -> Remove first
-            this.logs.removeAt(0);
-            this.elementLogs.removeChild(this.elementLogs.children[0]);
-        }
-
-        //Scroll to bottom
-        this.elementLogs.scrollTop = this.elementLogs.scrollHeight;
-    }
-
-    private clearLogs() {
-        //Clear list
-        this.logs = [];
-    }
-
-    private createLogElement(text: string): HTMLElement {
-        const element = document.createElement('span');
-        element.classList.add('log');
-        element.innerText = text;
-        return element;
     }
 
 }
