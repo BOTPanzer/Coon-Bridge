@@ -12,9 +12,11 @@ export class Server {
     protected PORT?: number;
 
     //State
+    private _isStarting: boolean = false;
     private _isRunning: boolean = false;
     private _isConnected: boolean = false;
 
+    public get isStarting(): boolean { return this._isStarting; }
     public get isRunning(): boolean { return this._isRunning; }
     public get isConnected(): boolean { return this._isConnected; }
 
@@ -30,22 +32,27 @@ export class Server {
             return;
         }
 
-        //Save connection address
-        this.IP = '0.0.0.0'; //Change later to local IP
-        this.PORT = PORT;
+        //Check if already starting
+        if (this.isStarting) {
+            this.logMessage('Server is already starting');
+            return;
+        }
+        this._isStarting = true;
 
         //Log starting
-        this.logMessage(`Starting server in port ${this.PORT}...`);
+        this.logMessage(`Starting server in port ${PORT}...`);
 
         //Start server
         try {
             await this.registerEvents();
             this.IP = await invoke<string>('server_start', { port: PORT });
+            this.PORT = PORT;
             this.onAddressIsKnown(this.IP, this.PORT);
         } catch (e: any) {
             this.logMessage(`Internal error: ${e}`);
             this.setServerState(false);
         }
+        this._isStarting = false;
     }
 
     private async registerEvents(): Promise<void> {
