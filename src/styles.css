@@ -602,9 +602,9 @@ dialog:not(:modal) {
     /* Layout */
     box-sizing: border-box;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     flex-wrap: wrap;
-    justify-content: center;
+    align-items: center;
     gap: 10px;
 }
 

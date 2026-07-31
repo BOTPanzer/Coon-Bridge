@@ -16,9 +16,11 @@ export class MetadataScreen extends BaseScreen {
     elementSearchDialog!: HTMLDialogElement
     elementSearchDialogInput!: HTMLInputElement
     elementSearchDialogSearch!: HTMLButtonElement
-    elementSearchResults!: HTMLElement
+    elementSearchDialogForm!: HTMLElement
+    elementSearchDialogResults!: HTMLElement
     elementClean!: HTMLButtonElement
     elementFix!: HTMLButtonElement
+    elementLogs!: HTMLElement
 
     //Screen
     constructor(app: App) {
@@ -39,9 +41,11 @@ export class MetadataScreen extends BaseScreen {
         this.elementSearchDialog = document.getElementById('metadata-search-dialog') as HTMLDialogElement;
         this.elementSearchDialogInput = document.getElementById('metadata-search-dialog-input') as HTMLInputElement;
         this.elementSearchDialogSearch = document.getElementById('metadata-search-dialog-search') as HTMLButtonElement;
-        this.elementSearchResults = document.getElementById('metadata-search-results')!;
+        this.elementSearchDialogForm = document.getElementById('metadata-search-dialog-form')!;
+        this.elementSearchDialogResults = document.getElementById('metadata-search-dialog-results')!;
         this.elementClean = document.getElementById('metadata-clean') as HTMLButtonElement;
         this.elementFix = document.getElementById('metadata-fix') as HTMLButtonElement;
+        this.elementLogs = document.getElementById('metadata-logs')!;
 
         //Assign back event
         this.elementBack.onclick = () => {
@@ -58,13 +62,14 @@ export class MetadataScreen extends BaseScreen {
             if (this.isWorking) return;
 
             //Search
-            this.elementSearchDialogInput.value = '';
             this.elementSearchDialog.showModal();
+            this.toggleSearchResults(false);
         }
 
         Util.onDialogBackdropClick(this.elementSearchDialog, () => {
             //Close dialog
             this.elementSearchDialog.close();
+            this.toggleSearchResults(false);
         });
 
         this.elementSearchDialogSearch.onclick = () => {
@@ -74,9 +79,6 @@ export class MetadataScreen extends BaseScreen {
 
             //Search
             this.search(query);
-
-            //Close dialog
-            this.elementSearchDialog.close();
         }
 
         //Assign clean metadata event
@@ -125,8 +127,9 @@ export class MetadataScreen extends BaseScreen {
     }
 
     protected onClosed(): boolean {
-        //Clear albums
+        //Clear albums & logs
         this.clearAlbums();
+        this.clearLogs();
 
         //Reset app state
         this.app.resetState();
@@ -158,7 +161,7 @@ export class MetadataScreen extends BaseScreen {
         for (const link of links) {
             //Check if album folder or metadata file do not exist
             if (!(await Util.existsFile(link.albumFolder)) || !(await Util.existsFile(link.metadataFile))) {
-                console.log('Please make sure all links have a valid album folder and metadata file!');
+                this.log('Failed to load albums: Please make sure all links have a valid album folder and metadata file!');
                 return;
             }
         }
@@ -172,10 +175,13 @@ export class MetadataScreen extends BaseScreen {
 
         //Count items
         this.countItemsWithMetadata();
+
+        //Success
+        this.log('Albums loaded successfully.');
     }
 
     private clearAlbums() {
-        //Clear lists
+        //Clear list
         this.albums = [];
     }
 
@@ -232,18 +238,16 @@ export class MetadataScreen extends BaseScreen {
         results.sort((a, b) => b.lastModified - a.lastModified);
 
         //Prepare UI
-        this.clearSearch();
-        this.elementSearchResults.style.display = '';
+        this.toggleSearchResults(true);
 
-        //Add title & clear button
-        const title = document.createElement('h2');
-        title.innerText = 'Search results';
-        this.elementSearchResults.appendChild(title);
-
+        //Add clear button
         const button = document.createElement('button');
         button.innerText = 'Clear search';
-        button.onclick = () => this.clearSearch();
-        this.elementSearchResults.appendChild(button);
+        button.onclick = (event: Event) => {
+            Util.interceptEvent(event);
+            this.toggleSearchResults(false);
+        };
+        this.elementSearchDialogResults.appendChild(button);
 
         //Check results
         if (!results.isEmpty()) {
@@ -257,20 +261,22 @@ export class MetadataScreen extends BaseScreen {
                 img.onload = () => {
                     img.setAttribute('loaded', '');
                 }
-                this.elementSearchResults.appendChild(img);
+                this.elementSearchDialogResults.appendChild(img);
             }
         } else {
             //Empty -> Add text
             const text = document.createElement('span');
             text.innerText = 'There are no results.';
-            this.elementSearchResults.appendChild(text);
+            this.elementSearchDialogResults.appendChild(text);
         }
     }
 
-    private clearSearch() {
+    private toggleSearchResults(show: boolean) {
         //Clear & hide results
-        this.elementSearchResults.innerHTML = '';
-        this.elementSearchResults.style.display = 'none';
+        this.elementSearchDialogForm.style.display = (show ? 'none' : '');
+        this.elementSearchDialogResults.style.display = (show ? '' : 'none');
+        this.elementSearchDialogResults.innerHTML = '';
+        this.elementSearchDialogInput.value = '';
     }
 
     //Metadata management
@@ -283,6 +289,7 @@ export class MetadataScreen extends BaseScreen {
             album.cleanMetadata();
             await album.saveMetadata();
         }
+        this.log(`Finished cleaning metadata.`);
 
         //Finish working
         this.setWorking(false);
@@ -290,7 +297,7 @@ export class MetadataScreen extends BaseScreen {
 
     private async fixMetadata() {
         //Create models
-        const descriptionModel: DescriptionModel = new DescriptionModel()
+        const descriptionModel: DescriptionModel = new DescriptionModel();
 
         //Fix items
         for (const [albumIndex, itemsWithoutMetadata] of this.itemsWithoutMetadata.entries()) {
@@ -306,7 +313,7 @@ export class MetadataScreen extends BaseScreen {
             for (let i = itemsWithoutMetadata.length - 1; i >= 0; i--) {
                 //Get item info
                 const item = itemsWithoutMetadata[i];
-                console.log(`- ${item.name}`);
+                this.log(`- ${item.name}`);
 
                 //Get metadata info
                 const itemMetadata = item.getMetadata();
@@ -319,21 +326,21 @@ export class MetadataScreen extends BaseScreen {
 
                 //Fix caption
                 if (!itemMetadata.caption) {
-                    console.log(`Generating caption...`);
+                    this.log(`Generating caption...`);
                     itemMetadata.caption = await descriptionModel.generateCaption(image);
                     hasCaption = true;
                 }
 
                 //Fix labels
                 if (!itemMetadata.labels) {
-                    console.log(`Generating labels...`);
+                    this.log(`Generating labels...`);
                     itemMetadata.labels = await descriptionModel.generateLabels(image);
                     hasLabels = true;
                 }
 
                 //Fix text
                 if (!itemMetadata.text) {
-                    console.log(`Detecting text...`);
+                    this.log(`Detecting text...`);
                     itemMetadata.text = await descriptionModel.generateText(image);
                     hasText = true;
                 }
@@ -363,9 +370,43 @@ export class MetadataScreen extends BaseScreen {
             album.cleanMetadata();
             await album.saveMetadata(!albumWasSaved);
         }
+        this.log(`Finished fixing metadata.`);
 
         //Unload models
         await descriptionModel.unload();
+    }
+
+    //Logs
+    private maxLogs: number = 1000;
+    private logs: string[] = [];
+
+    private log(text: string) {
+        //Add log
+        console.log(text);
+        this.logs.add(text);
+        this.elementLogs.appendChild(this.createLogElement(text));
+
+        //Check if max length exceeded
+        if (this.logs.length > this.maxLogs) {
+            //Exceeded -> Remove first
+            this.logs.removeAt(0);
+            this.elementLogs.removeChild(this.elementLogs.children[0]);
+        }
+
+        //Scroll to bottom
+        this.elementLogs.scrollTop = this.elementLogs.scrollHeight;
+    }
+
+    private clearLogs() {
+        //Clear list
+        this.logs = [];
+    }
+
+    private createLogElement(text: string): HTMLElement {
+        const element = document.createElement('span');
+        element.classList.add('log');
+        element.innerText = text;
+        return element;
     }
 
 }

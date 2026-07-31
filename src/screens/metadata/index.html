@@ -48,14 +48,16 @@
     <!-- Search dialog -->
     <dialog id="metadata-search-dialog">
         <span class="menu-title">Search</span>
-        <form class="menu-list" onsubmit="event.preventDefault()">
+        <form id="metadata-search-dialog-form" class="menu-list" onsubmit="event.preventDefault()">
             <input id="metadata-search-dialog-input" type="text" autocomplete="off" placeholder="Search query (3+ characters)">
             <button id="metadata-search-dialog-search">Search</button>
         </form>
+        <div id="metadata-search-dialog-results" class="menu-list" style="display: none;"></div>
     </dialog>
 
-    <!-- Search results -->
-    <div id="metadata-search-results" class="page-vc" style="display: none;"></div>
+    <!-- Logs -->
+    <h2>Logs</h2>
+    <div id="metadata-logs" class="logs"></div>
 </div>
 
 <!-- Style -->
@@ -63,7 +65,8 @@
     /* Images */
     .image {
         /* Size */
-        width: max-content;
+        width: 100%;
+        max-width: 100%;
         max-height: 60vh;
         aspect-ratio: 1;
 
@@ -79,9 +82,31 @@
 
     .image[loaded] {
         /* Size */
+        width: max-content;
         aspect-ratio: unset;
 
         /* Appearence */
         opacity: 1;
+    }
+
+    /* Logs */
+    .logs {
+        /* Size */
+        max-height: 50vh;
+        padding: 10px;
+
+        /* Layout */
+        display: flex;
+        flex-direction: column;
+        overflow-y: scroll;
+
+        /* Appearence */
+        border: 2px dashed var(--onSurface);
+        border-radius: 10px;
+    }
+
+    .log {
+        /* Size */
+        padding: 0;
     }
 </style>

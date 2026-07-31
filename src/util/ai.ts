@@ -23,12 +23,12 @@ export class DescriptionModel {
         this.model = await Florence2ForConditionalGeneration.from_pretrained(
             this.modelId, 
             {
-                device: "webgpu",
+                device: 'webgpu',
                 dtype: {
-                    embed_tokens: "fp16",
-                    vision_encoder: "fp16",
-                    encoder_model: "q4",
-                    decoder_model_merged: "q4",
+                    embed_tokens: 'fp16',
+                    vision_encoder: 'fp16',
+                    encoder_model: 'q4',
+                    decoder_model_merged: 'q4',
                 }
             }
         );
