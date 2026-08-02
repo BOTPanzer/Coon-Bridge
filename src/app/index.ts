@@ -46,7 +46,7 @@ const startHidden = (await getMatches()).args.hidden?.value ?? false;
 const settings: AppSettings = await loadSettings();
 
 //App logic
-export enum AppState { Idle, ManagingSettings, ManagingMetadata, Syncing }
+export enum AppState { Idle, SettingsScreen, MetadataScreen, SyncScreen, SyncBackground }
 
 export class App {
 
@@ -220,7 +220,7 @@ export class App {
         this.initToolbar();
 
         //Init components
-        this._bridge = new AppBridge();
+        this._bridge = new AppBridge(this);
         this.bridge.start();
 
         //Init screens

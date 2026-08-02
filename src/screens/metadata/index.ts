@@ -153,31 +153,22 @@ export class MetadataScreen extends BaseScreen {
     //Albums
     private albums: Album[] = [];
 
-    private async loadAlbums() {
-        //Get links
-        const links = this.app.settings.links;
+    private async loadAlbums(): Promise<boolean> {
+        //Load albums
+        const success = await Album.loadAlbums(this.app.settings.links, this.albums);
 
-        //Check if links are valid
-        for (const link of links) {
-            //Check if album folder or metadata file do not exist
-            if (!(await Util.existsFile(link.albumFolder)) || !(await Util.existsFile(link.metadataFile))) {
-                this.log('Failed to load albums: Please make sure all links have a valid album folder and metadata file!');
-                return;
-            }
+        //Check result
+        if (!success) {
+            //Log result
+            this.log('Albums loaded successfully.');
+
+            //Count items
+            this.countItemsWithMetadata();
+        } else {
+            //Log result
+            this.log('Failed to load albums: Make sure all links have a valid album folder and metadata file!');
         }
-
-        //Load links info
-        for (const link of links) {
-            //Create & save album
-            const album = await Album.create(link);
-            this.albums.add(album);
-        }
-
-        //Count items
-        this.countItemsWithMetadata();
-
-        //Success
-        this.log('Albums loaded successfully.');
+        return success;
     }
 
     private clearAlbums() {
@@ -257,7 +248,7 @@ export class MetadataScreen extends BaseScreen {
     }
 
     //Search
-    private search(query: string) {
+    private async search(query: string) {
         //Create results list
         const results: Item[] = [];
 
@@ -287,7 +278,7 @@ export class MetadataScreen extends BaseScreen {
             //Has results -> Add images
             for (const result of results) {
                 const img = document.createElement('img');
-                img.src = convertFileSrc(result.getPath());
+                img.src = convertFileSrc(await result.getPath());
                 img.loading = 'lazy';
                 img.decoding = 'async';
                 img.classList.add('image');
@@ -355,7 +346,7 @@ export class MetadataScreen extends BaseScreen {
                 let hasText: boolean = Array.isArray(itemMetadata.text);
 
                 //Load image
-                const image = await load_image(convertFileSrc(item.getPath()));
+                const image = await load_image(convertFileSrc(await item.getPath()));
 
                 //Fix caption
                 if (!itemMetadata.caption) {

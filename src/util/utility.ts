@@ -1,8 +1,3 @@
-import { readTextFile, writeTextFile, mkdir, exists, rename } from '@tauri-apps/plugin-fs';
-import { dirname } from '@tauri-apps/api/path';
-
-
-
  /*$   /$$   /$$     /$$ /$$
 | $$  | $$  | $$    |__/| $$
 | $$  | $$ /$$$$$$   /$$| $$
@@ -23,6 +18,11 @@ export class Util {
     static randomInt(min: number, max: number) {
         //Get a random int between min and max
         return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    static round(value: number, decimals: number): number {
+        const factor = Math.pow(10, decimals);
+        return Math.round(value * factor) / factor;
     }
 
     //Lists
@@ -59,57 +59,6 @@ export class Util {
     static setCharAt(string: string, index: number, char: string) {
         if (index > string.length - 1) return string;
         return string.substring(0, index) + char + string.substring(index + 1);
-    }
-
-    //Files
-    static async readFile(path: string): Promise<string | null> {
-        //Read file
-        try {
-            return await readTextFile(path);
-        } catch (e) {
-            return null;
-        }
-    }
-
-    static async readJSON(path: string): Promise<object> {
-        //Read file
-        const text = await Util.readFile(path);
-        if (!text) return {};
-
-        //Parse JSON
-        try {
-            return JSON.parse(text);
-        } catch (e) {
-            return {};
-        }
-    }
-
-    static async saveFile(path: string, content: string) {
-        //Save file
-        try {
-            const dir = await dirname(path);
-            await mkdir(dir, { recursive: true });
-            await writeTextFile(path, content);
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    static async saveJSON(path: string, content: object, prettify: boolean = true) {
-        //Save file
-        await Util.saveFile(path, JSON.stringify(content, null, prettify ? 4 : 0));
-    }
-
-    static async existsFile(path: string): Promise<boolean> {
-        return await exists(path);
-    }
-
-    static async renameFile(oldPath: string, newPath: string) {
-        await rename(oldPath, newPath);
-    }
-
-    static async createFolder(path: string) {
-        await mkdir(path, { recursive: true });
     }
 
 }

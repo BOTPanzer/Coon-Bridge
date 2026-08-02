@@ -1,35 +1,33 @@
-use tauri::{
-    menu::{
-        MenuBuilder, 
-        MenuItemBuilder
-    },
-    tray::TrayIconBuilder,
-    Manager, 
-    WindowEvent,
-    AppHandle, 
-    Emitter, 
-    State
-};
-use serde::Serialize;
 use std::{
-    fs,
-    path::Path,
-    time::UNIX_EPOCH,
-    sync::Arc
+    fs::{self, OpenOptions},
+    io::{Seek, SeekFrom, Write},
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::{Duration, UNIX_EPOCH},
 };
-use futures_util::{
-    SinkExt, 
-    StreamExt
-};
-use tokio::{
-    net::TcpListener,
-    sync::mpsc
-};
-use tokio_tungstenite::{
-    accept_async, 
-    tungstenite::Message
-};
+use futures_util::{SinkExt, StreamExt};
 use local_ip_address::local_ip;
+use serde::Serialize;
+use tauri::{
+    menu::{MenuBuilder, MenuItemBuilder},
+    tray::TrayIconBuilder,
+    AppHandle, Emitter, Manager, State, WindowEvent,
+};
+use tokio::{net::TcpListener, sync::mpsc};
+use tokio_tungstenite::{accept_async, tungstenite::Message};
+
+
+  /*$$$$$
+ /$$__  $$
+| $$  \ $$  /$$$$$$   /$$$$$$
+| $$$$$$$$ /$$__  $$ /$$__  $$
+| $$__  $$| $$  \ $$| $$  \ $$
+| $$  | $$| $$  | $$| $$  | $$
+| $$  | $$| $$$$$$$/| $$$$$$$/
+|__/  |__/| $$____/ | $$____/
+          | $$      | $$
+          | $$      | $$
+          |__/      |_*/
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -80,7 +78,7 @@ pub fn run() {
             }
         })
         //Custom API
-        .invoke_handler(tauri::generate_handler![list_folder_items, server_start, server_send_text, server_send_binary])
+        .invoke_handler(tauri::generate_handler![list_folder_items, write_file_at_offset, set_last_modified, server_start, server_send_text, server_send_binary])
         .manage(Arc::new(ServerState::new()))
         //App
         .run(tauri::generate_context!())
@@ -149,6 +147,28 @@ fn list_folder_items(folder_path: String, allow_videos: bool) -> Result<Vec<File
 
     //Return entries
     Ok(entries)
+}
+
+#[tauri::command]
+fn write_file_at_offset(path: String, offset: u64, data: Vec<u8>) -> Result<(), String> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(PathBuf::from(path))
+        .map_err(|e| e.to_string())?;
+    file.seek(SeekFrom::Start(offset))
+        .map_err(|e| e.to_string())?;
+    file.write_all(&data)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn set_last_modified(path: String, last_modified: u64) -> Result<(), String> {
+    let file = fs::File::open(PathBuf::from(path)).map_err(|e| e.to_string())?;
+    let time = UNIX_EPOCH + Duration::from_millis(last_modified);
+    file.set_modified(time).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 

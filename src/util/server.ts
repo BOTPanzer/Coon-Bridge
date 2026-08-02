@@ -1,6 +1,17 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 
+
+
+  /*$$$$$
+ /$$__  $$
+| $$  \__/  /$$$$$$   /$$$$$$  /$$    /$$ /$$$$$$   /$$$$$$
+|  $$$$$$  /$$__  $$ /$$__  $$|  $$  /$$//$$__  $$ /$$__  $$
+ \____  $$| $$$$$$$$| $$  \__/ \  $$/$$/| $$$$$$$$| $$  \__/
+ /$$  \ $$| $$_____/| $$        \  $$$/ | $$_____/| $$
+|  $$$$$$/|  $$$$$$$| $$         \  $/  |  $$$$$$$| $$
+ \______/  \_______/|__/          \_/    \_______/|_*/
+
 export class Server {
 
     constructor() {}
@@ -21,43 +32,45 @@ export class Server {
     public get isConnected(): boolean { return this._isConnected; }
 
     //Logs
-    protected logs: string[] = [];
+    protected _logs: string[] = [];
+
+    public get logs(): readonly string[] { return this._logs; }
 
 
     //Connection
     public async start(PORT: number = 6969): Promise<void> {
         //Check if already running
         if (this.isRunning) {
-            this.logMessage('Server is already running');
+            this.log('Server is already running');
             return;
         }
 
         //Check if already starting
         if (this.isStarting) {
-            this.logMessage('Server is already starting');
+            this.log('Server is already starting');
             return;
         }
         this._isStarting = true;
 
         //Log starting
-        this.logMessage(`Starting server in port ${PORT}...`);
+        this.log(`Starting server in port ${PORT}...`);
 
         //Start server
         try {
-            await this.registerEvents();
+            await this.registerServerEvents();
             this.IP = await invoke<string>('server_start', { port: PORT });
             this.PORT = PORT;
             this.onAddressIsKnown(this.IP, this.PORT);
         } catch (e: any) {
-            this.logMessage(`Internal error: ${e}`);
+            this.log(`Internal error: ${e}`);
             this.setServerState(false);
         }
         this._isStarting = false;
     }
 
-    private async registerEvents(): Promise<void> {
+    private async registerServerEvents(): Promise<void> {
         //Clear old events
-        this.clearEvents();
+        this.clearServerEvents();
 
         //Register new events
         this.unlistenFns.push(
@@ -87,12 +100,12 @@ export class Server {
 
         this.unlistenFns.push(
             await listen<string>('ws://error', (event) => {
-                this.logMessage(`Internal error: ${event.payload}`);
+                this.log(`Internal error: ${event.payload}`);
             })
         );
     }
 
-    private clearEvents(): void {
+    private clearServerEvents(): void {
         this.unlistenFns.forEach((unlisten) => unlisten());
         this.unlistenFns = [];
     }
@@ -111,32 +124,32 @@ export class Server {
     }
 
     protected onAddressIsKnown(IP: string, PORT: number): void {
-        this.logMessage(`Server address: ${IP}:${PORT}`);
+        this.log(`Server address: ${IP}:${PORT}`);
     }
 
     protected onServerStateChanged(isRunning: boolean): void {
         if (isRunning) {
-            this.logMessage('Server is now running');
+            this.log('Server is now running');
         } else {
-            this.logMessage('Server is now not running');
+            this.log('Server is now not running');
         }
     }
 
     protected onConnectionStateChanged(isConnected: boolean, clientIP: string): void {
         if (isConnected) {
-            this.logMessage(`Connected to client with IP ${clientIP}`);
+            this.log(`Connected to client with IP ${clientIP}`);
         } else {
-            this.logMessage(`Disconnected from client with IP ${clientIP}`);
+            this.log(`Disconnected from client with IP ${clientIP}`);
         }
     }
 
     //Data
-    protected async onReceivedString(message: string): Promise<void> {
-        this.logMessage(`Received string: ${message.length} characters`);
+    protected async onReceivedString(str: string): Promise<void> {
+        this.log(`Received string: ${str.length} characters`);
     }
 
     protected async onReceivedBinary(data: Buffer): Promise<void> {
-        this.logMessage(`Received bytes: ${data.length} bytes`);
+        this.log(`Received bytes: ${data.length} bytes`);
     }
 
     protected async send(data: string | Buffer): Promise<void> {
@@ -152,8 +165,8 @@ export class Server {
     }
 
     //Logs
-    protected logMessage(message: string): void {
-        this.logs.push(message);
+    protected log(message: string): void {
+        this._logs.push(message);
         console.log(message);
     }
 

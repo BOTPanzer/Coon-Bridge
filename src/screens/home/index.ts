@@ -16,32 +16,39 @@ export class HomeScreen extends BaseScreen {
     protected onRendered(): void {
         //Add listeners
         document.getElementById('home-settings')!.onclick = () => {
-            //Start managing settings
-            const success = this.app.setState(AppState.ManagingSettings);
+            //Enter settings screen state
+            const success = this.app.setState(AppState.SettingsScreen);
             if (success) {
                 //Open settings screen
                 this.app.open(this.app.settingsScreen);
             } else {
                 //Notify user
-                console.log("Can't modify settings right now!");
+                console.log("Can't enter settings screen right now!");
             }
         }
 
         document.getElementById('home-metadata')!.onclick = () => {
-            //Start managing metadata
-            const success = this.app.setState(AppState.ManagingMetadata);
+            //Enter metadata screen state
+            const success = this.app.setState(AppState.MetadataScreen);
             if (success) {
                 //Open metadata screen
                 this.app.open(this.app.metadataScreen);
             } else {
                 //Notify user
-                console.log("Can't modify settings right now!");
+                console.log("Can't enter metadata screen right now!");
             }
         }
 
         document.getElementById('home-sync')!.onclick = () => {
-            //Open sync screen
-            this.app.open(this.app.syncScreen);
+            //Enter sync screen state
+            const success = this.app.setState(AppState.SyncScreen);
+            if (success) {
+                //Open sync screen
+                this.app.open(this.app.syncScreen);
+            } else {
+                //Notify user
+                console.log("Can't enter sync screen right now!");
+            }
         }
     }
 

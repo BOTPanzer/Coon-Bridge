@@ -7,6 +7,17 @@ import {
     PreTrainedModel
 } from '@huggingface/transformers';
 
+
+
+  /*$$$$$  /$$$$$$
+ /$$__  $$|_  $$_/
+| $$  \ $$  | $$
+| $$$$$$$$  | $$
+| $$__  $$  | $$
+| $$  | $$  | $$
+| $$  | $$ /$$$$$$
+|__/  |__/|_____*/
+
 export class DescriptionModel {
 
     private modelId: string = 'onnx-community/Florence-2-large-ft';

@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Util } from '.';
+import { Files } from '.';
 
 
 
@@ -54,8 +54,8 @@ export class Item {
     }
 
     //Helpers
-    getPath(): string {
-        return `${this.album.albumFolder}\\${this.name}`;
+    async getPath(): Promise<string> {
+        return await Files.join(this.album.albumPath, this.name);
     }
 
     getMetadata(): MetadataItem {
@@ -67,11 +67,11 @@ export class Item {
 export class Album {
 
     //Info
-    private _albumFolder: string
-    private _metadataFile: string
+    private _albumPath: string
+    private _metadataPath: string
 
-    get albumFolder(): string { return this._albumFolder; }
-    get metadataFile(): string { return this._metadataFile; }
+    get albumPath(): string { return this._albumPath; }
+    get metadataPath(): string { return this._metadataPath; }
 
     private _items: Item[] = [];
     private metadata: Metadata = {};
@@ -81,8 +81,8 @@ export class Album {
     //Factory
     constructor(link: Link, items: Item[], metadata: Metadata) {
         //Save info
-        this._albumFolder = link.albumFolder;
-        this._metadataFile = link.metadataFile;
+        this._albumPath = link.albumFolder;
+        this._metadataPath = link.metadataFile;
         this._items = items;
         this.metadata = metadata;
 
@@ -98,20 +98,43 @@ export class Album {
         let metadata: Metadata = {};
 
         //Check if album is valid
-        if (await Util.existsFile(link.albumFolder)) {
+        if (await Files.exists(link.albumFolder)) {
             //Valid -> Get all allowed files in the album folder
             const itemsData = await invoke<{ name: string; lastModified: number }[]>('list_folder_items', { folderPath: link.albumFolder, allowVideos: false });
             items = itemsData.map(data => new Item(data.name, data.lastModified));
         }
 
         //Check if metadata is valid
-        if (await Util.existsFile(link.metadataFile)) {
+        if (await Files.exists(link.metadataFile)) {
             //Valid -> Load metadata file info
-            metadata = await Util.readJSON(link.metadataFile) as Metadata;
+            metadata = await Files.readJSON(link.metadataFile) as Metadata;
         }
 
         //Create album
         return new Album(link, items, metadata);
+    }
+
+    static async loadAlbums(links: Link[], albums: Album[]): Promise<boolean> {
+        //Clear albums list
+        albums.length = 0;
+
+        //Check if links are valid
+        for (const link of links) {
+            //Check if album folder does not exist
+            if (!(await Files.exists(link.albumFolder)) || !(await Files.exists(link.metadataFile))) {
+                return false;
+            }
+        }
+
+        //Load links info
+        for (const link of links) {
+            //Create & save album
+            const album = await Album.create(link);
+            albums.add(album);
+        }
+
+        //Success
+        return true;
     }
 
     //Actions
@@ -169,22 +192,22 @@ export class Album {
     //Metadata management
     async saveMetadata(backup: boolean = true) {
         //Check if should backup
-        if (backup && await Util.existsFile(this.metadataFile)) {
+        if (backup && await Files.exists(this.metadataPath)) {
             //Create new backup path
             let metadataBackupPath = '';
             let metadataBackupIndex = 0;
             while (true) {
-                metadataBackupPath = `${this.metadataFile}.backup${metadataBackupIndex}`;
-                if (!await Util.existsFile(metadataBackupPath)) break;
+                metadataBackupPath = `${this.metadataPath}.backup${metadataBackupIndex}`;
+                if (!await Files.exists(metadataBackupPath)) break;
                 metadataBackupIndex++;
             }
 
             //Backup current metadata file
-            await Util.renameFile(this.metadataFile, metadataBackupPath);
+            await Files.rename(this.metadataPath, metadataBackupPath);
         }
 
         //Save file
-        Util.saveJSON(this.metadataFile, this.metadata, false);
+        Files.saveJSON(this.metadataPath, this.metadata, false);
     }
 
     cleanMetadata() {
