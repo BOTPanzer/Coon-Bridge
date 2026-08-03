@@ -267,7 +267,12 @@ input[type="checkbox"] {
 
     /* Other */
     cursor: pointer;
-    transition: border-radius .1s;
+    transition: border-radius .1s, background-color .1s;
+}
+
+input[type="checkbox"]:not(:disabled):not(:checked) {
+    /* Appearence */
+    background-color: color-mix(in srgb, var(--accent) 75%, var(--background) 25%);
 }
 
 input[type="checkbox"]:not(:disabled):active {
