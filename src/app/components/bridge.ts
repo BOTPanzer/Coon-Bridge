@@ -74,10 +74,10 @@ export class AppBridge extends Server {
 
     private async loadAlbums(): Promise<boolean> {
         //Load albums
-        const success = await Album.loadAlbums(this.app.settings.links, this.host.albums);
+        const success = await Album.loadAlbums(this.app.settings.links, this.host.albums, false, false);
 
         //Check result
-        if (!success) {
+        if (success) {
             //Log result
             this.log('Albums loaded successfully.');
         } else {
@@ -85,6 +85,11 @@ export class AppBridge extends Server {
             this.log('Failed to load albums: Make sure all links have a valid album folder and metadata file!');
         }
         return success;
+    }
+
+    private clearAlbums() {
+        //Empty albums list
+        this.host.albums.length = 0;
     }
 
     //Events
@@ -216,7 +221,7 @@ export class AppBridge extends Server {
         }
     }
 
-    override async onReceivedBinary(data: Buffer) {
+    override async onReceivedBinary(data: Uint8Array) {
         //Get request
         const request = this.host.request!;
 
@@ -303,7 +308,7 @@ export class AppBridge extends Server {
         }));
     }
 
-    private async actionReceivedItemData(request: Request, data: Buffer) {
+    private async actionReceivedItemData(request: Request, data: Uint8Array) {
         //Get info
         const albumIndex: number = request.albumIndex;
         const itemIndex: number = request.itemIndex;
@@ -353,7 +358,7 @@ export class AppBridge extends Server {
         }));
     }
 
-    private async actionReceivedMetadataData(request: Request, data: Buffer) {
+    private async actionReceivedMetadataData(request: Request, data: Uint8Array) {
         //Get info
         const albumIndex: number = request.albumIndex;
         const metadataPath: string = this.host.albums[albumIndex].metadataPath;
@@ -402,7 +407,7 @@ export class AppBridge extends Server {
     }
 
     //Helpers
-    private async manageWriteData(request: Request, data: Buffer, filePath: string): Promise<boolean> {
+    private async manageWriteData(request: Request, data: Uint8Array, filePath: string): Promise<boolean> {
         //Get info
         const lastModified: number = request.lastModified;
 
@@ -458,7 +463,8 @@ export class AppBridge extends Server {
 
         //Check if queue has remaining items
         if (queueIndex >= queueSize) {
-            //No items left -> Finished sync
+            //No items left -> Clear albums cache & finish sync
+            this.clearAlbums();
             this.setSyncing(false);
             this.log('Finished downloading albums');
             await this.send(JSON.stringify({
@@ -540,16 +546,78 @@ export class AppBridge extends Server {
 
         //Perform action
         await action();
-
-        //Reset app state
-        this.app.resetState();
     }
 
     async downloadAlbums() {
         //Perform action
-        this.performAction(() => {
-            //Download albums
-            this.log('Downloading albums...');
+        this.performAction(async () => {
+            //Start syncing
+            this.setSyncing(true);
+            this.log('Starting to download albums...');
+
+            //Load albums
+            const success = await this.loadAlbums();
+            if (!success) {
+                //Failed to load albums -> Stop syncing
+                this.setSyncing(false);
+                this.log('Download cancelled');
+                return;
+            }
+
+            //Check albums sizes
+            const hostAlbumsCount = this.host.albums.length;
+            const clientAlbumsCount = this.client.albums.length;
+            if (hostAlbumsCount !== clientAlbumsCount) {
+                //Different album amounts -> Stop syncing
+                this.setSyncing(false);
+                this.log(`Download cancelled, make sure both apps have the same amount of links (host: ${hostAlbumsCount}, client: ${clientAlbumsCount})`);
+                return;
+            }
+
+            //Create empty queue
+            const queue: QueueItem[] = [];
+
+            //Check albums
+            for (let albumIndex = 0; albumIndex < this.host.albums.length; albumIndex++) {
+                const hostAlbum = this.host.albums[albumIndex];
+                //Get client album (item names list)
+                const clientAlbum = this.client.albums[albumIndex];
+
+                //Check for deleted files
+                if (!this.app.settings.syncIgnoreDeletedItems) {
+                    for (const hostItem of hostAlbum.items) {
+                        //Check if client album contains item
+                        if (clientAlbum.includes(hostItem.name)) continue;
+
+                        //Item is missing -> It was deleted
+                        this.log(`Deleted file found, deleting "${hostItem.name}"...`);
+                        await Files.remove(hostItem.path);
+                    }
+                }
+
+                //Check for missing files (from oldest to newest)
+                const reversedClientAlbum = [...clientAlbum].reverse();
+                for (let reversedItemIndex = 0; reversedItemIndex < reversedClientAlbum.length; reversedItemIndex++) {
+                    const itemName = reversedClientAlbum[reversedItemIndex];
+
+                    //Check if host album contains item
+                    if (hostAlbum.items.some(albumItem => albumItem.name === itemName)) continue;
+
+                    //Item is missing -> It needs to be downloaded
+                    this.log(`Missing file found, adding "${itemName}" to the queue...`);
+                    const item = new QueueItem();
+                    item.albumIndex = albumIndex;
+                    item.itemIndex = clientAlbum.length - (reversedItemIndex + 1);
+                    queue.push(item);
+                }
+            }
+
+            //Update queue
+            this.host.queue = queue;
+
+            //Request first item
+            this.host.queueIndex = -1;
+            await this.requestNextQueueItem();
         });
     }
 

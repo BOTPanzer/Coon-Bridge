@@ -155,10 +155,10 @@ export class MetadataScreen extends BaseScreen {
 
     private async loadAlbums(): Promise<boolean> {
         //Load albums
-        const success = await Album.loadAlbums(this.app.settings.links, this.albums);
+        const success = await Album.loadAlbums(this.app.settings.links, this.albums, true, true);
 
         //Check result
-        if (!success) {
+        if (success) {
             //Log result
             this.log('Albums loaded successfully.');
 
@@ -278,7 +278,7 @@ export class MetadataScreen extends BaseScreen {
             //Has results -> Add images
             for (const result of results) {
                 const img = document.createElement('img');
-                img.src = convertFileSrc(await result.getPath());
+                img.src = convertFileSrc(result.path);
                 img.loading = 'lazy';
                 img.decoding = 'async';
                 img.classList.add('image');
@@ -346,7 +346,7 @@ export class MetadataScreen extends BaseScreen {
                 let hasText: boolean = Array.isArray(itemMetadata.text);
 
                 //Load image
-                const image = await load_image(convertFileSrc(await item.getPath()));
+                const image = await load_image(convertFileSrc(item.path));
 
                 //Fix caption
                 if (!itemMetadata.caption) {

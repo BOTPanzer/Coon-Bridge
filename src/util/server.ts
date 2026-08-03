@@ -93,7 +93,7 @@ export class Server {
 
         this.unlistenFns.push(
             await listen<number[]>('ws://message-binary', (event) => {
-                const buffer = Buffer.from(event.payload);
+                const buffer = Uint8Array.from(event.payload);
                 this.onReceivedBinary(buffer);
             })
         );
@@ -148,11 +148,11 @@ export class Server {
         this.log(`Received string: ${str.length} characters`);
     }
 
-    protected async onReceivedBinary(data: Buffer): Promise<void> {
+    protected async onReceivedBinary(data: Uint8Array): Promise<void> {
         this.log(`Received bytes: ${data.length} bytes`);
     }
 
-    protected async send(data: string | Buffer): Promise<void> {
+    protected async send(data: string | Uint8Array): Promise<void> {
         //Check if connected
         if (!this.isConnected) return;
 

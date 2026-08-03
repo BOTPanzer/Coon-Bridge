@@ -100,11 +100,13 @@ pub fn run() {
 #[serde(rename_all = "camelCase")]
 struct FileItem {
     name: String,
+    path: String,
     last_modified: u64,
+    is_video: bool
 }
 
 #[tauri::command]
-fn list_folder_items(folder_path: String, allow_videos: bool) -> Result<Vec<FileItem>, String> {
+fn list_folder_items(folder_path: String, ignore_videos: bool) -> Result<Vec<FileItem>, String> {
     //Get dir
     let dir = Path::new(&folder_path);
 
@@ -112,25 +114,33 @@ fn list_folder_items(folder_path: String, allow_videos: bool) -> Result<Vec<File
     let mut entries: Vec<FileItem> = fs::read_dir(dir)
         .map_err(|e| e.to_string())?
         .filter_map(|res| res.ok())
-        .filter(|entry| {
+        .filter_map(|entry| {
             let path = entry.path();
             let is_file = entry.file_type().map(|ft| ft.is_file()).unwrap_or(false);
+            if !is_file {
+                return None;
+            }
+
             let ext = path
                 .extension()
                 .and_then(|ext| ext.to_str())
                 .map(|ext| ext.to_lowercase());
+
             let is_image = matches!(
                 ext.as_deref(),
                 Some("png" | "jpg" | "jpeg" | "webp" | "bmp" | "gif" | "heic" | "heif" | "avif" | "tiff")
             );
-            let is_video = allow_videos && matches!(
+            let is_video = matches!(
                 ext.as_deref(),
                 Some("mp4" | "mkv" | "webm" | "mov" | "avi" | "wmv" | "flv" | "m4v")
             );
-            is_file && (is_image || is_video)
-        })
-        .map(|entry| {
+
+            if !is_image && (ignore_videos || !is_video) {
+                return None;
+            }
+
             let name = entry.file_name().to_string_lossy().into_owned();
+            let path_str = path.to_string_lossy().into_owned();
             let last_modified = entry
                 .metadata()
                 .and_then(|m| m.modified())
@@ -138,7 +148,8 @@ fn list_folder_items(folder_path: String, allow_videos: bool) -> Result<Vec<File
                 .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
                 .map(|d| d.as_millis() as u64)
                 .unwrap_or(0);
-            FileItem { name, last_modified }
+
+            Some(FileItem { name, path: path_str, last_modified, is_video })
         })
         .collect();
 
@@ -165,8 +176,11 @@ fn write_file_at_offset(path: String, offset: u64, data: Vec<u8>) -> Result<(), 
 
 #[tauri::command]
 fn set_last_modified(path: String, last_modified: u64) -> Result<(), String> {
-    let file = fs::File::open(PathBuf::from(path)).map_err(|e| e.to_string())?;
-    let time = UNIX_EPOCH + Duration::from_millis(last_modified);
+    let file = fs::OpenOptions::new()
+        .write(true)
+        .open(PathBuf::from(path))
+        .map_err(|e| e.to_string())?;
+    let time = UNIX_EPOCH + Duration::from_millis(last_modified * 1000);
     file.set_modified(time).map_err(|e| e.to_string())?;
     Ok(())
 }

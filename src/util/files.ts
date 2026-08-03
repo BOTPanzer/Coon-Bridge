@@ -1,4 +1,4 @@
-import { readFile, readTextFile, writeTextFile, mkdir, exists, rename, stat } from '@tauri-apps/plugin-fs';
+import { readFile, readTextFile, writeTextFile, mkdir, exists, rename, stat, remove } from '@tauri-apps/plugin-fs';
 import { dirname, join } from '@tauri-apps/api/path';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -62,7 +62,7 @@ export class Files {
         await Files.saveFile(path, JSON.stringify(content, null, prettify ? 4 : 0));
     }
 
-    static async writeFileWithOffset(path: string, offset: number, buffer: Buffer) {
+    static async writeFileWithOffset(path: string, offset: number, buffer: Uint8Array) {
         //Save file
         try {
             await invoke('write_file_at_offset', { path, offset, data: Array.from(buffer) });
@@ -77,6 +77,10 @@ export class Files {
 
     static async rename(oldPath: string, newPath: string) {
         await rename(oldPath, newPath);
+    }
+
+    static async remove(path: string) {
+        await remove(path);
     }
 
     static async createFolder(path: string) {

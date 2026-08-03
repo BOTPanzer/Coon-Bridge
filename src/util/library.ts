@@ -35,18 +35,24 @@ export class Item {
 
     //Info
     private _name: string
+    private _path: string
     private _lastModified: number
+    private _isVideo: boolean
     private _album!: Album
 
     get name(): string { return this._name; }
+    get path(): string { return this._path; }
     get lastModified(): number { return this._lastModified; }
+    get isVideo(): boolean { return this._isVideo; }
     get album(): Album { return this._album; }
 
     //Item
-    constructor(name: string, lastModified: number) {
+    constructor(name: string, path: string, lastModified: number, isVideo: boolean) {
         //Save info
         this._name = name;
+        this._path = path;
         this._lastModified = lastModified;
+        this._isVideo = isVideo;
     }
 
     assignAlbum(album: Album) {
@@ -54,10 +60,6 @@ export class Item {
     }
 
     //Helpers
-    async getPath(): Promise<string> {
-        return await Files.join(this.album.albumPath, this.name);
-    }
-
     getMetadata(): MetadataItem {
         return this.album.getItemMetadata(this.name);
     }
@@ -92,7 +94,7 @@ export class Album {
         }
     }
 
-    static async create(link: Link): Promise<Album> {
+    static async create(link: Link, ignoreVideos: Boolean): Promise<Album> {
         //Temp
         let items: Item[] = [];
         let metadata: Metadata = {};
@@ -100,8 +102,12 @@ export class Album {
         //Check if album is valid
         if (await Files.exists(link.albumFolder)) {
             //Valid -> Get all allowed files in the album folder
-            const itemsData = await invoke<{ name: string; lastModified: number }[]>('list_folder_items', { folderPath: link.albumFolder, allowVideos: false });
-            items = itemsData.map(data => new Item(data.name, data.lastModified));
+            const itemsData = await invoke<{ name: string; path: string; lastModified: number, isVideo: boolean }[]>('list_folder_items', {
+                folderPath: link.albumFolder,
+                ignoreVideos: ignoreVideos
+            });
+            items = itemsData
+                .map(data => new Item(data.name, data.path, data.lastModified, data.isVideo));
         }
 
         //Check if metadata is valid
@@ -114,14 +120,14 @@ export class Album {
         return new Album(link, items, metadata);
     }
 
-    static async loadAlbums(links: Link[], albums: Album[]): Promise<boolean> {
+    static async loadAlbums(links: Link[], albums: Album[], validateMetadata: Boolean, ignoreVideos: Boolean): Promise<boolean> {
         //Clear albums list
         albums.length = 0;
 
         //Check if links are valid
         for (const link of links) {
             //Check if album folder does not exist
-            if (!(await Files.exists(link.albumFolder)) || !(await Files.exists(link.metadataFile))) {
+            if (!(await Files.exists(link.albumFolder)) || (validateMetadata && !(await Files.exists(link.metadataFile)))) {
                 return false;
             }
         }
@@ -129,7 +135,7 @@ export class Album {
         //Load links info
         for (const link of links) {
             //Create & save album
-            const album = await Album.create(link);
+            const album = await Album.create(link, ignoreVideos);
             albums.add(album);
         }
 
