@@ -403,7 +403,7 @@ export class AppBridge extends Server {
 
         //Send info
         const bytes = await Files.readBytes(metadataPath);
-        await this.send(bytes ?? Buffer.from([]));
+        await this.send(bytes ?? Uint8Array.from([]));
     }
 
     //Helpers

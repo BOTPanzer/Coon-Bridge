@@ -15,10 +15,10 @@ import { invoke } from '@tauri-apps/api/core';
 
 export class Files {
 
-    static async readBytes(path: string): Promise<Buffer | null> {
+    static async readBytes(path: string): Promise<Uint8Array | null> {
         //Read file
         try {
-            return Buffer.from(await readFile(path));
+            return Uint8Array.from(await readFile(path));
         } catch (e) {
             return null;
         }
@@ -62,10 +62,10 @@ export class Files {
         await Files.saveFile(path, JSON.stringify(content, null, prettify ? 4 : 0));
     }
 
-    static async writeFileWithOffset(path: string, offset: number, buffer: Uint8Array) {
+    static async writeFileWithOffset(path: string, offset: number, data: Uint8Array) {
         //Save file
         try {
-            await invoke('write_file_at_offset', { path, offset, data: Array.from(buffer) });
+            await invoke('write_file_at_offset', { path, offset, data: Array.from(data) });
         } catch (e) {
             console.error(e);
         }

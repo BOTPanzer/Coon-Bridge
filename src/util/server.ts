@@ -93,8 +93,8 @@ export class Server {
 
         this.unlistenFns.push(
             await listen<number[]>('ws://message-binary', (event) => {
-                const buffer = Uint8Array.from(event.payload);
-                this.onReceivedBinary(buffer);
+                const data = Uint8Array.from(event.payload);
+                this.onReceivedBinary(data);
             })
         );
 
