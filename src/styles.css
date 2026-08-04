@@ -217,7 +217,7 @@ button {
     background-color: var(--accent);
     border-radius: calc(var(--height) / 2);
     border: none;
-    font-family: noto;
+    font-family: var(--textFont);
     font-size: 0.9em;
 
     /* Other */
@@ -350,7 +350,7 @@ input[type="text"] {
     background-color: var(--accent);
     border-radius: calc(var(--height) / 2);
     border: none;
-    font-family: noto;
+    font-family: var(--textFont);
     font-size: 0.9em;
 
     /* Other */
@@ -417,7 +417,6 @@ ul, ol {
 
 .item-description {
     /* Appearence */
-    font-size: 0.8em;
     color: var(--onSurfaceAlt);
 }
 
@@ -523,6 +522,27 @@ loading {
 .page-hc[center], .page-vc[center] {
     /* Layout */
     align-items: center;
+}
+
+/* Logs */
+.logs {
+    /* Size */
+    max-height: 50vh;
+    padding: 10px 16px;
+
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+    overflow-y: scroll;
+
+    /* Appearence */
+    border: 2px dashed var(--onSurface);
+    border-radius: 10px;
+}
+
+.log {
+    /* Size */
+    padding: 3px 0px;
 }
 
 
@@ -632,4 +652,18 @@ dialog:not(:modal) {
 h1, h2, h3 {
     /* Size */
     margin: 0;
+}
+
+h1 {
+    /* Size */
+    width: 100%;
+
+    /* Appearence */
+    font-family: var(--titleFont);
+    text-align: center;
+}
+
+h2 {
+    /* Appearence */
+    font-family: var(--headerFont);
 }

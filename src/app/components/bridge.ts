@@ -57,7 +57,7 @@ export class AppBridge extends Server {
     get connectionCode(): string { return this._connectionCode; }
 
     //Events
-    private eventsOnLogMessage: Set<Function> = new Set();
+    private eventsOnLogMessage: Set<(text: string) => void> = new Set();
     private eventsOnServerStateChanged: Set<Function> = new Set();
     private eventsOnConnectionStateChanged: Set<Function> = new Set();
     private eventsOnConnectionCodeChanged: Set<Function> = new Set();
@@ -93,7 +93,7 @@ export class AppBridge extends Server {
     }
 
     //Events
-    registerEvents(logMessage = null, serverStateChanged = null, connectionStateChanged = null, connectionCodeChanged = null) {
+    registerEvents(logMessage: ((text: string) => void) | null = null, serverStateChanged = null, connectionStateChanged = null, connectionCodeChanged = null) {
         if (logMessage) {
             this.eventsOnLogMessage.add(logMessage);
         }
@@ -108,7 +108,7 @@ export class AppBridge extends Server {
         }
     }
 
-    unregisterEvents(logMessage = null, serverStateChanged = null, connectionStateChanged = null, connectionCodeChanged = null) {
+    unregisterEvents(logMessage: ((text: string) => void) | null = null, serverStateChanged = null, connectionStateChanged = null, connectionCodeChanged = null) {
         if (logMessage) {
             this.eventsOnLogMessage.delete(logMessage);
         }

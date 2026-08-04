@@ -15,6 +15,7 @@ export class SyncScreen extends BaseScreen {
     elementSyncMetadataReceive!: HTMLButtonElement
     elementSyncMetadataDialogSend!: HTMLButtonElement
     elementSyncMetadataDialogReceive!: HTMLButtonElement
+    elementLogs!: HTMLElement
 
     //Components
     get bridge(): AppBridge { return this.app.bridge; }
@@ -36,6 +37,7 @@ export class SyncScreen extends BaseScreen {
         this.elementSyncMetadataDialog = document.getElementById('sync-metadata-dialog') as HTMLDialogElement;
         this.elementSyncMetadataDialogSend = document.getElementById('sync-metadata-dialog-send') as HTMLButtonElement;
         this.elementSyncMetadataDialogReceive = document.getElementById('sync-metadata-dialog-receive') as HTMLButtonElement;
+        this.elementLogs = document.getElementById('metadata-logs')!;
 
         //Assign back event
         document.getElementById('sync-back')!.onclick = () => {
@@ -63,7 +65,7 @@ export class SyncScreen extends BaseScreen {
             //Show options dialog
             this.elementSyncMetadataDialog.showModal();
         }
-        
+
         Util.onDialogBackdropClick(this.elementSyncMetadataDialog, () => {
             //Close dialog
             this.elementSyncMetadataDialog.close();
@@ -88,15 +90,50 @@ export class SyncScreen extends BaseScreen {
         }
     }
 
-    protected onOpen(): void {}
+    protected onOpen(): void {
+        //Register events
+        this.app.bridge.registerEvents(this.log, null, null, null);
+
+        //Create logs
+        for (const text of this.app.bridge.logs) {
+            this.log(text);
+        }
+    }
 
     protected onClosed(): boolean {
         //Block closing if syncing
         if (this.bridge.isSyncing) return false;
 
+        //Unregister events
+        this.app.bridge.unregisterEvents(this.log, null, null, null);
+
         //Reset app state
         this.app.resetState();
         return true;
+    }
+
+    //Logs
+    private maxLogs: number = 1000;
+
+    private log = (text: string) => {
+        //Add log
+        this.elementLogs.appendChild(this.createLogElement(text));
+
+        //Check if max length exceeded
+        if (this.elementLogs.children.length > this.maxLogs) {
+            //Exceeded -> Remove first
+            this.elementLogs.removeChild(this.elementLogs.children[0]);
+        }
+
+        //Scroll to bottom
+        this.elementLogs.scrollTop = this.elementLogs.scrollHeight;
+    }
+
+    private createLogElement(text: string): HTMLElement {
+        const element = document.createElement('span');
+        element.classList.add('log');
+        element.innerText = text;
+        return element;
     }
 
 }

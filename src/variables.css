@@ -8,8 +8,16 @@
 |__/    \______/ |__/  |__/   \___/ |______*/
 
 @font-face { 
-    src: url('./assets/fonts/noto-sans.woff2');
-    font-family: noto;
+    src: url('./assets/fonts/outfit.woff2');
+    font-family: outfit;
+}
+@font-face { 
+    src: url('./assets/fonts/opificio_bold_rounded.woff2');
+    font-family: opificio;
+}
+@font-face { 
+    src: url('./assets/fonts/fraunces.woff2');
+    font-family: fraunces;
 }
 
 
@@ -42,8 +50,9 @@
 
     /* Text */
     --textSize: 16px;
-    --textFont: noto;
-    --headerFont: noto;
+    --textFont: outfit;
+    --headerFont: opificio;
+    --titleFont: fraunces;
 
     /* Special */
     --hover: color-mix(in srgb, var(--onBackground) 15%, transparent);
