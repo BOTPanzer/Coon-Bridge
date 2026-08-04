@@ -165,6 +165,7 @@ fn write_file_at_offset(path: String, offset: u64, data: Vec<u8>) -> Result<(), 
     let mut file = OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(PathBuf::from(path))
         .map_err(|e| e.to_string())?;
     file.seek(SeekFrom::Start(offset))
