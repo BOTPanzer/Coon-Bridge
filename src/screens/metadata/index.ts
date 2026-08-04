@@ -155,7 +155,7 @@ export class MetadataScreen extends BaseScreen {
 
     private async loadAlbums(): Promise<boolean> {
         //Load albums
-        const success = await Album.loadAlbums(this.app.settings.links, this.albums, true, true);
+        const success = await Album.loadAlbums(this.app.settings.links, this.albums, true, true, true);
 
         //Check result
         if (success) {

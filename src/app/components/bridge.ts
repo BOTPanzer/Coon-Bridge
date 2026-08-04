@@ -7,13 +7,13 @@ class Request {
     itemIndex: number = -1;
 
     //File info
-    lastModified: number = 0;
+    lastModified: number = 0; //Seconds
     size: number = 0;
 
     //Parts info
     partIndex: number = 0;
     partMaxSize: number = 0;
-    parts: number = -1;
+    parts: number = 1;
 }
 
 class QueueItem {
@@ -72,9 +72,9 @@ export class AppBridge extends Server {
         this.client = new ClientInfo()
     }
 
-    private async loadAlbums(): Promise<boolean> {
+    private async loadAlbums(loadItems: Boolean, loadMetadata: Boolean, ): Promise<boolean> {
         //Load albums
-        const success = await Album.loadAlbums(this.app.settings.links, this.host.albums, false, false);
+        const success = await Album.loadAlbums(this.app.settings.links, this.host.albums, loadItems, loadMetadata, false);
 
         //Check result
         if (success) {
@@ -82,7 +82,7 @@ export class AppBridge extends Server {
             this.log('Albums loaded successfully.');
         } else {
             //Log result
-            this.log('Failed to load albums: Make sure all links have a valid album folder and metadata file!');
+            this.log('Failed to load albums: Make sure all links have a valid album folder!');
         }
         return success;
     }
@@ -230,7 +230,7 @@ export class AppBridge extends Server {
             //Has item index -> Is a file request
             await this.actionReceivedItemData(request, data)
         } else {
-            //No item index _> Is a metadata request
+            //No item index -> Is a metadata request
             await this.actionReceivedMetadataData(request, data)
         }
     }
@@ -271,12 +271,13 @@ export class AppBridge extends Server {
     }
 
     //Actions
-    private actionEndSync() {
+    private actionEndSync(message: string = 'Finished sync') {
         //Stop syncing
         this.setSyncing(false);
+        this.log(message);
 
-        //Log
-        this.log('Finished sync');
+        //Clear albums cache
+        this.clearAlbums();
     }
 
     private actionReceivedAlbums(message: any) {
@@ -386,13 +387,13 @@ export class AppBridge extends Server {
         const metadataPath: string = this.host.albums[albumIndex].metadataPath;
 
         //Log
-        this.log('- Sending metadata for album {album_index}...');
+        this.log(`- Sending metadata for album ${albumIndex}...`);
 
         //Send info
         await this.send(JSON.stringify({
             'action': 'metadataInfo',
             'albumIndex': albumIndex,
-            'lastModified': await Files.getLastModified(metadataPath)
+            'lastModified': (await Files.getLastModified(metadataPath)) / 1000 //Dates get sent in seconds, we use millis
         }));
     }
 
@@ -409,7 +410,7 @@ export class AppBridge extends Server {
     //Helpers
     private async manageWriteData(request: Request, data: Uint8Array, filePath: string): Promise<boolean> {
         //Get info
-        const lastModified: number = request.lastModified;
+        const lastModified: number = request.lastModified * 1000; //Dates get sent in seconds, we use millis
 
         const partIndex: number = request.partIndex;
         const partMaxSize: number = request.partMaxSize;
@@ -463,10 +464,8 @@ export class AppBridge extends Server {
 
         //Check if queue has remaining items
         if (queueIndex >= queueSize) {
-            //No items left -> Clear albums cache & finish sync
-            this.clearAlbums();
-            this.setSyncing(false);
-            this.log('Finished downloading albums');
+            //No items left -> Finish sync
+            this.actionEndSync('Finished downloading albums');
             await this.send(JSON.stringify({
                 'action': 'endSync'
             }));
@@ -497,9 +496,8 @@ export class AppBridge extends Server {
 
         //Check if queue has remaining items
         if (queueIndex >= queueSize) {
-            //No items left -> Finished sync
-            this.setSyncing(false);
-            this.log('Finished downloading metadata');
+            //No items left -> Finish sync
+            this.actionEndSync('Finished downloading metadata');
             await this.send(JSON.stringify({
                 'action': 'endSync'
             }));
@@ -556,7 +554,7 @@ export class AppBridge extends Server {
             this.log('Starting to download albums...');
 
             //Load albums
-            const success = await this.loadAlbums();
+            const success = await this.loadAlbums(true, false);
             if (!success) {
                 //Failed to load albums -> Stop syncing
                 this.setSyncing(false);
@@ -570,7 +568,7 @@ export class AppBridge extends Server {
             if (hostAlbumsCount !== clientAlbumsCount) {
                 //Different album amounts -> Stop syncing
                 this.setSyncing(false);
-                this.log(`Download cancelled, make sure both apps have the same amount of links (host: ${hostAlbumsCount}, client: ${clientAlbumsCount})`);
+                this.log(`Download cancelled, make sure both apps have the same amount of links! (host: ${hostAlbumsCount}, client: ${clientAlbumsCount})`);
                 return;
             }
 
@@ -623,17 +621,85 @@ export class AppBridge extends Server {
 
     async downloadMetadata() {
         //Perform action
-        this.performAction(() => {
-            //Download metadata
-            this.log('Downloading metadata...');
+        this.performAction(async () => {
+            //Start syncing
+            this.setSyncing(true);
+            this.log('Starting to download metadata...');
+
+            //Load albums
+            const success = await this.loadAlbums(false, false);
+            if (!success) {
+                //Failed to load albums -> Stop syncing
+                this.setSyncing(false);
+                this.log('Download cancelled');
+                return;
+            }
+
+            //Create empty queue
+            const queue: QueueItem[] = [];
+
+            //Check metadata files
+            for (const [index, link] of this.app.settings.links.entries()) {
+                //Get metadata path
+                const metadataPath = link.metadataFile;
+
+                //Check if metadata exists
+                if (!(await Files.exists(metadataPath))) {
+                    //Path does not exist -> Stop syncing
+                    this.setSyncing(false);
+                    this.log('Download cancelled, make sure all link metadata files exist!');
+                    return;
+                }
+
+                //Create item & add it to the queue
+                const item = new QueueItem();
+                item.albumIndex = index;
+                queue.push(item);
+            }
+
+            //Update queue
+            this.host.queue = queue;
+
+            //Request first
+            this.host.queueIndex = -1;
+            await this.requestNextQueueMetadata();
         });
     }
 
     async uploadMetadata() {
         //Perform action
-        this.performAction(() => {
-            //Upload metadata
-            this.log('Uploading metadata...');
+        this.performAction(async () => {
+            //Start syncing
+            this.setSyncing(true);
+            this.log('Starting to upload metadata...');
+
+            //Load albums
+            const success = await this.loadAlbums(false, false);
+            if (!success) {
+                //Failed to load albums -> Stop syncing
+                this.setSyncing(false);
+                this.log('Upload cancelled');
+                return;
+            }
+
+            //Check metadata files
+            for (const link of this.app.settings.links) {
+                //Get metadata path
+                const metadataPath = link.metadataFile;
+
+                //Check if metadata exists
+                if (!(await Files.exists(metadataPath))) {
+                    //Path does not exist -> Stop syncing
+                    this.setSyncing(false);
+                    this.log('Upload cancelled, make sure all link metadata files exist!');
+                    return;
+                }
+            }
+
+            //Start metadata request
+            await this.send(JSON.stringify({
+                action: 'startMetadataRequest'
+            }));
         });
     }
 

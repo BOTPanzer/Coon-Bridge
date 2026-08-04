@@ -94,13 +94,13 @@ export class Album {
         }
     }
 
-    static async create(link: Link, ignoreVideos: Boolean): Promise<Album> {
+    static async create(link: Link, loadItems: Boolean, loadMetadata: Boolean, ignoreVideos: Boolean): Promise<Album> {
         //Temp
         let items: Item[] = [];
         let metadata: Metadata = {};
 
         //Check if album is valid
-        if (await Files.exists(link.albumFolder)) {
+        if (loadItems && await Files.exists(link.albumFolder)) {
             //Valid -> Get all allowed files in the album folder
             const itemsData = await invoke<{ name: string; path: string; lastModified: number, isVideo: boolean }[]>('list_folder_items', {
                 folderPath: link.albumFolder,
@@ -111,7 +111,7 @@ export class Album {
         }
 
         //Check if metadata is valid
-        if (await Files.exists(link.metadataFile)) {
+        if (loadMetadata && await Files.exists(link.metadataFile)) {
             //Valid -> Load metadata file info
             metadata = await Files.readJSON(link.metadataFile) as Metadata;
         }
@@ -120,14 +120,14 @@ export class Album {
         return new Album(link, items, metadata);
     }
 
-    static async loadAlbums(links: Link[], albums: Album[], validateMetadata: Boolean, ignoreVideos: Boolean): Promise<boolean> {
+    static async loadAlbums(links: Link[], albums: Album[], loadItems: Boolean, loadMetadata: Boolean, ignoreVideos: Boolean): Promise<boolean> {
         //Clear albums list
         albums.length = 0;
 
         //Check if links are valid
         for (const link of links) {
             //Check if album folder does not exist
-            if (!(await Files.exists(link.albumFolder)) || (validateMetadata && !(await Files.exists(link.metadataFile)))) {
+            if ((loadItems && !(await Files.exists(link.albumFolder))) || (loadMetadata && !(await Files.exists(link.metadataFile)))) {
                 return false;
             }
         }
@@ -135,7 +135,7 @@ export class Album {
         //Load links info
         for (const link of links) {
             //Create & save album
-            const album = await Album.create(link, ignoreVideos);
+            const album = await Album.create(link, loadItems, loadMetadata, ignoreVideos);
             albums.add(album);
         }
 

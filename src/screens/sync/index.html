@@ -38,4 +38,42 @@
             <button id="sync-metadata">Sync</button>
         </div>
     </div>
+
+    <!-- Metadata dialog -->
+    <dialog id="sync-metadata-dialog">
+        <span class="menu-title">Sync Metadata</span>
+        <div class="menu-list">
+            <span>
+                <span>Who should sync its metadata?</span>
+                <ul>
+                    <li>Send: PC to Client</li>
+                    <li>Receive: Client to PC</li>
+                </ul>
+            </span>
+            <div class="metadata-buttons">
+                <button id="sync-metadata-dialog-send">Send</button>
+                <button id="sync-metadata-dialog-receive">Receive</button>
+            </div>
+        </div>
+    </dialog>
 </div>
+
+<!-- Style -->
+<style>
+    .metadata-buttons {
+        /* Size */
+        width: 100%;
+        margin-top: 10px;
+
+        /* Layout */
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .metadata-buttons > button {
+        /* Size */
+        flex: 1;
+    }
+</style>

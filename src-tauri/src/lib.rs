@@ -180,7 +180,7 @@ fn set_last_modified(path: String, last_modified: u64) -> Result<(), String> {
         .write(true)
         .open(PathBuf::from(path))
         .map_err(|e| e.to_string())?;
-    let time = UNIX_EPOCH + Duration::from_millis(last_modified * 1000);
+    let time = UNIX_EPOCH + Duration::from_millis(last_modified);
     file.set_modified(time).map_err(|e| e.to_string())?;
     Ok(())
 }
