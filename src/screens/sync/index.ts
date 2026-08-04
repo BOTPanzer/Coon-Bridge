@@ -46,7 +46,10 @@ export class SyncScreen extends BaseScreen {
         }
 
         //Server
-        this.elementStartServer.onclick = () => {}
+        this.elementStartServer.onclick = () => {
+            //Start server
+            this.bridge.start();
+        }
 
         //Albums
         this.elementSyncAlbums.onclick = () => {
@@ -92,10 +95,10 @@ export class SyncScreen extends BaseScreen {
 
     protected onOpen(): void {
         //Register events
-        this.app.bridge.registerEvents(this.log, null, null, null);
+        this.bridge.registerEvents(this.log, null, null, null);
 
         //Create logs
-        for (const text of this.app.bridge.logs) {
+        for (const text of this.bridge.logs) {
             this.log(text);
         }
     }
@@ -105,7 +108,7 @@ export class SyncScreen extends BaseScreen {
         if (this.bridge.isSyncing) return false;
 
         //Unregister events
-        this.app.bridge.unregisterEvents(this.log, null, null, null);
+        this.bridge.unregisterEvents(this.log, null, null, null);
 
         //Reset app state
         this.app.resetState();
