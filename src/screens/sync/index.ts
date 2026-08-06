@@ -7,6 +7,9 @@ import html from './index.html?raw';
 export class SyncScreen extends BaseScreen {
 
     //Elements
+    elementStateServer!: HTMLElement
+    elementStatePhone!: HTMLElement
+    elementStateCode!: HTMLElement
     elementStartServer!: HTMLElement
     elementSyncAlbums!: HTMLElement
     elementSyncMetadata!: HTMLElement
@@ -31,6 +34,9 @@ export class SyncScreen extends BaseScreen {
     //State
     protected onRendered(): void {
         //Get elements
+        this.elementStateServer = document.getElementById('sync-state-server')!;
+        this.elementStatePhone = document.getElementById('sync-state-phone')!;
+        this.elementStateCode = document.getElementById('sync-state-code')!;
         this.elementStartServer = document.getElementById('sync-start-server')!;
         this.elementSyncAlbums = document.getElementById('sync-albums')!;
         this.elementSyncMetadata = document.getElementById('sync-metadata')!;
@@ -95,12 +101,17 @@ export class SyncScreen extends BaseScreen {
 
     protected onOpen(): void {
         //Register events
-        this.bridge.registerEvents(this.log, null, null, null);
+        this.bridge.registerEvents(this.log, this.onServerStateChanged, this.onConnectionStateChanged, null);
 
         //Create logs
         for (const text of this.bridge.logs) {
             this.log(text);
         }
+
+        //Update state
+        this.onServerStateChanged(this.bridge.isRunning);
+        this.onConnectionStateChanged(this.bridge.isConnected, '');
+        this.onConnectionCodeChanged(this.bridge.connectionCode);
     }
 
     protected onClosed(): boolean {
@@ -108,7 +119,7 @@ export class SyncScreen extends BaseScreen {
         if (this.bridge.isSyncing) return false;
 
         //Unregister events
-        this.bridge.unregisterEvents(this.log, null, null, null);
+        this.bridge.unregisterEvents(this.log, this.onServerStateChanged, this.onConnectionStateChanged, null);
 
         //Reset app state
         this.app.resetState();
@@ -137,6 +148,27 @@ export class SyncScreen extends BaseScreen {
         element.classList.add('log');
         element.innerText = text;
         return element;
+    }
+
+    //State
+    private onServerStateChanged = (isRunning: boolean) => {
+        if (isRunning) {
+            this.elementStateServer.setAttribute('active', '');
+        } else {
+            this.elementStateServer.removeAttribute('active');
+        }
+    }
+
+    private onConnectionStateChanged = (isConnected: boolean, _: string) => {
+        if (isConnected) {
+            this.elementStatePhone.setAttribute('active', '');
+        } else {
+            this.elementStatePhone.removeAttribute('active');
+        }
+    }
+
+    private onConnectionCodeChanged = (code: string) => {
+        this.elementStateCode.innerText = code;
     }
 
 }

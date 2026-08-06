@@ -60,10 +60,18 @@
     <!-- Logs -->
     <h2>Logs</h2>
     <div id="metadata-logs" class="logs"></div>
+
+    <!-- Status -->
+    <div class="status">
+        <span>Server running: <dot id="sync-state-server"></dot></span>
+        <span>Phone connected: <dot id="sync-state-phone"></dot></span>
+        <span>Code: <span id="sync-state-code"></span></span>
+    </div>
 </div>
 
 <!-- Style -->
 <style>
+    /* Metadata */
     .metadata-buttons {
         /* Size */
         width: 100%;
@@ -79,5 +87,49 @@
     .metadata-buttons > button {
         /* Size */
         flex: 1;
+    }
+
+    /* Status */
+    .status {
+        /* Size */
+        padding: 20px;
+
+        /* Layout */
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        /* Appearence */
+        background-color: var(--surface);
+        color: var(--onSurface);
+        border-radius: 20px;
+    }
+
+    .status > span {
+        /* Layout */
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+    }
+
+    dot {
+        /* Size */
+        width: 14px;
+        height: 14px;
+        min-width: 14px;
+        min-height: 14px;
+
+        /* Appearence */
+        border-radius: 10px;
+        background-color: rgb(230, 27, 27);
+    }
+
+    dot[active] {
+        /* Appearence */
+        background-color: rgb(18, 184, 18);
     }
 </style>

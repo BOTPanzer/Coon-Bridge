@@ -58,9 +58,9 @@ export class AppBridge extends Server {
 
     //Events
     private eventsOnLogMessage: Set<(text: string) => void> = new Set();
-    private eventsOnServerStateChanged: Set<Function> = new Set();
-    private eventsOnConnectionStateChanged: Set<Function> = new Set();
-    private eventsOnConnectionCodeChanged: Set<Function> = new Set();
+    private eventsOnServerStateChanged: Set<(isRunning: boolean) => void> = new Set();
+    private eventsOnConnectionStateChanged: Set<(isConnected: boolean, clientIP: string) => void> = new Set();
+    private eventsOnConnectionCodeChanged: Set<(code: string) => void> = new Set();
 
 
     //Info
@@ -72,7 +72,7 @@ export class AppBridge extends Server {
         this.client = new ClientInfo()
     }
 
-    private async loadAlbums(loadItems: Boolean, loadMetadata: Boolean, ): Promise<boolean> {
+    private async loadAlbums(loadItems: Boolean, loadMetadata: Boolean): Promise<boolean> {
         //Load albums
         const success = await Album.loadAlbums(this.app.settings.links, this.host.albums, loadItems, loadMetadata, false);
 
@@ -93,7 +93,12 @@ export class AppBridge extends Server {
     }
 
     //Events
-    registerEvents(logMessage: ((text: string) => void) | null = null, serverStateChanged = null, connectionStateChanged = null, connectionCodeChanged = null) {
+    registerEvents(
+        logMessage: ((text: string) => void) | null = null,
+        serverStateChanged: ((isRunning: boolean) => void) | null = null,
+        connectionStateChanged: ((isConnected: boolean, clientIP: string) => void) | null = null, 
+        connectionCodeChanged: ((code: string) => void) | null = null
+    ) {
         if (logMessage) {
             this.eventsOnLogMessage.add(logMessage);
         }
@@ -108,7 +113,12 @@ export class AppBridge extends Server {
         }
     }
 
-    unregisterEvents(logMessage: ((text: string) => void) | null = null, serverStateChanged = null, connectionStateChanged = null, connectionCodeChanged = null) {
+    unregisterEvents(
+        logMessage: ((text: string) => void) | null = null, 
+        serverStateChanged: ((isRunning: boolean) => void) | null = null, 
+        connectionStateChanged: ((isConnected: boolean, clientIP: string) => void) | null = null, 
+        connectionCodeChanged: ((code: string) => void) | null = null
+    ) {
         if (logMessage) {
             this.eventsOnLogMessage.delete(logMessage);
         }
