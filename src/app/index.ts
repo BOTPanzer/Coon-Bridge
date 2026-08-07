@@ -40,7 +40,8 @@ const elements = {
           |__/      |_*/
 
 //Start info
-const startHidden = (await getMatches()).args.hidden?.value ?? false;
+const matches = await getMatches()
+const startHidden = matches.args.hidden?.value ?? false;
 
 //Components
 const settings: AppSettings = await loadSettings();
@@ -64,10 +65,16 @@ export class App {
 
     //Init
     initWindow = () => {
-        //Prevent flashbang while loading
-        window.onload = () => {
-            //Show window after it loads
+        //Check if window is loaded
+        if (document.readyState === 'complete') {
+            //Show window
             if (!startHidden) this.window.show()
+        } else {
+            //Prevent flashbang while loading
+            window.onload = () => {
+                //Show window after it loads
+                if (!startHidden) this.window.show()
+            }
         }
     }
 
