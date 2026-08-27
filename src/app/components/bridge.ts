@@ -1,5 +1,6 @@
+import { invoke } from '@tauri-apps/api/core';
 import { type App } from '..';
-import { Album, Files, Server, Util } from '../../util';
+import { Album, Files, Server } from '../../util';
 
 class Request {
     //Album
@@ -14,6 +15,21 @@ class Request {
     partIndex: number = 0;
     partMaxSize: number = 0;
     parts: number = 1;
+}
+
+type WriteRequest = {
+    //File info
+    filePath: string
+    lastModified: number //Milliseconds
+
+    //Parts info
+    partIndex: number
+    partMaxSize: number
+    parts: number
+
+    //Progress
+    progressCurrent: number
+    progressSize: number
 }
 
 class QueueItem {
@@ -50,11 +66,11 @@ export class AppBridge extends Server {
     private host: HostInfo = new HostInfo();
     private client: ClientInfo = new ClientInfo();
 
-    private _isSyncing: boolean = false;
     private _connectionCode: string = '';
+    private _isSyncing: boolean = false;
 
-    get isSyncing(): boolean { return this._isSyncing; }
     get connectionCode(): string { return this._connectionCode; }
+    public get isSyncing(): boolean { return this._isSyncing; }
 
     //Events
     private eventsOnLogMessage: Set<(text: string) => void> = new Set();
@@ -91,9 +107,95 @@ export class AppBridge extends Server {
         //Empty albums list
         this.host.albums.length = 0;
     }
+    //State
+    protected override onAddressIsKnown(IP: string, PORT: number) {
+        //Update connection code
+        this.setConnectionCode(this.addressToCode(IP, PORT));
+        this.log(`Connection code: ${this.connectionCode}`);
+    }
+
+    protected override onServerStateChanged(isRunning: boolean) {
+        //Call parent function
+        super.onServerStateChanged(isRunning);
+
+        //Check if running
+        if (!isRunning) {
+            //Server stopped -> Reset connection code & stop syncing
+            this.setSyncing(false);
+            this.setConnectionCode('---');
+        }
+
+        //Call events
+        for (const callback of this.eventsOnServerStateChanged) {
+            callback(isRunning);
+        }
+    }
+
+    protected override onConnectionStateChanged(isConnected: boolean, clientIP: string) {
+        //Call parent function
+        super.onConnectionStateChanged(isConnected, clientIP);
+
+        //Check state
+        if (!isConnected) {
+            //Stop syncing & reset info if connection was closed
+            this.setSyncing(false);
+            this.resetInfo();
+        }
+
+        //Call events
+        for (const callback of this.eventsOnConnectionStateChanged) {
+            callback(isConnected, clientIP);
+        }
+    }
+
+    protected setSyncing(newSyncing: boolean) {
+        //Update info
+        this._isSyncing = newSyncing;
+    }
+
+    //Logs
+    protected override log(message: string) {
+        //Call parent function
+        super.log(message);
+
+        //Call events
+        for (const callback of this.eventsOnLogMessage) {
+            callback(message);
+        }
+    }
+
+    //Connection code
+    private setConnectionCode(newCode: string) {
+        //Update code
+        this._connectionCode = newCode;
+        
+        //Call events
+        for (const callback of this.eventsOnConnectionCodeChanged) {
+            callback(newCode);
+        }
+    }
+
+    private encodeBase36(n: number): string {
+        const CODE_CHARSET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        if (n === 0) return CODE_CHARSET[0];
+        let res = "";
+        while (n > 0) {
+            const rem = n % 36;
+            n = Math.floor(n / 36);
+            res = CODE_CHARSET[rem] + res;
+        }
+        return res;
+    }
+
+    private addressToCode(IP: string, PORT: number): string {
+        const parts = IP.split('.').map(Number);
+        const ipNum = (parts[0] * 16777216) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+        const combined = (ipNum * 65536) + PORT;
+        return this.encodeBase36(combined);
+    }
 
     //Events
-    registerEvents(
+    public registerEvents(
         logMessage: ((text: string) => void) | null = null,
         serverStateChanged: ((isRunning: boolean) => void) | null = null,
         connectionStateChanged: ((isConnected: boolean, clientIP: string) => void) | null = null, 
@@ -113,7 +215,7 @@ export class AppBridge extends Server {
         }
     }
 
-    unregisterEvents(
+    public unregisterEvents(
         logMessage: ((text: string) => void) | null = null, 
         serverStateChanged: ((isRunning: boolean) => void) | null = null, 
         connectionStateChanged: ((isConnected: boolean, clientIP: string) => void) | null = null, 
@@ -133,60 +235,8 @@ export class AppBridge extends Server {
         }
     }
 
-    //Logs
-    override log(message: string) {
-        //Call parent function
-        super.log(message);
-
-        //Call events
-        for (const callback of this.eventsOnLogMessage) {
-            callback(message);
-        }
-    }
-
-    //State
-    override onAddressIsKnown(IP: string, PORT: number) {
-        //Update connection code
-        this.setConnectionCode(this.addressToCode(IP, PORT));
-        this.log(`Connection code: ${this.connectionCode}`);
-    }
-
-    override onServerStateChanged(isRunning: boolean) {
-        //Call parent function
-        super.onServerStateChanged(isRunning);
-
-        //Check if running
-        if (!isRunning) {
-            //Server stopped -> Reset connection code & stop syncing
-            this.setConnectionCode('---');
-            this.setSyncing(false);
-        }
-
-        //Call events
-        for (const callback of this.eventsOnServerStateChanged) {
-            callback(isRunning);
-        }
-    }
-
-    override onConnectionStateChanged(isConnected: boolean, clientIP: string) {
-        //Call parent function
-        super.onConnectionStateChanged(isConnected, clientIP);
-
-        //Check state
-        if (!isConnected) {
-            //Stop syncing & reset info if connection was closed
-            this.setSyncing(false);
-            this.resetInfo();
-        }
-
-        //Call events
-        for (const callback of this.eventsOnConnectionStateChanged) {
-            callback(isConnected, clientIP);
-        }
-    }
-
     //Data
-    override async onReceivedString(str: string) {
+    protected override async onReceivedString(str: string) {
         //Parse JSON from string
         try {
             //Parse JSON
@@ -229,55 +279,21 @@ export class AppBridge extends Server {
             //Failed to parse json
             this.log(`Failed to parse JSON: ${e}`)
         }
+
     }
 
-    override async onReceivedBinary(data: Uint8Array) {
+    protected override async onReceivedBinary() {
         //Get request
         const request = this.host.request!;
 
         //Check request type
         if (request.itemIndex >= 0) {
             //Has item index -> Is a file request
-            await this.actionReceivedItemData(request, data)
+            await this.actionReceivedItemData(request)
         } else {
             //No item index -> Is a metadata request
-            await this.actionReceivedMetadataData(request, data)
+            await this.actionReceivedMetadataData(request)
         }
-    }
-
-    //Connection code
-    private setConnectionCode(newCode: string) {
-        //Update code
-        this._connectionCode = newCode;
-        
-        //Call events
-        for (const callback of this.eventsOnConnectionCodeChanged) {
-            callback(newCode);
-        }
-    }
-
-    private encodeBase36(n: number): string {
-        const CODE_CHARSET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        if (n === 0) return CODE_CHARSET[0];
-        let res = "";
-        while (n > 0) {
-            const rem = n % 36;
-            n = Math.floor(n / 36);
-            res = CODE_CHARSET[rem] + res;
-        }
-        return res;
-    }
-
-    private addressToCode(IP: string, PORT: number): string {
-        const parts = IP.split('.').map(Number);
-        const ipNum = (parts[0] * 16777216) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
-        const combined = (ipNum * 65536) + PORT;
-        return this.encodeBase36(combined);
-    }
-
-    //Syncing
-    private setSyncing(newSyncing: boolean) {
-        this._isSyncing = newSyncing;
     }
 
     //Actions
@@ -319,7 +335,7 @@ export class AppBridge extends Server {
         }));
     }
 
-    private async actionReceivedItemData(request: Request, data: Uint8Array) {
+    private async actionReceivedItemData(request: Request) {
         //Get info
         const albumIndex: number = request.albumIndex;
         const itemIndex: number = request.itemIndex;
@@ -328,7 +344,7 @@ export class AppBridge extends Server {
         const itemPath: string = await Files.join(this.host.albums[albumIndex].albumPath, itemName);
 
         //Manage write data
-        const finished: Boolean = await this.manageWriteData(request, data, itemPath)
+        const finished: Boolean = await this.manageWriteData(request, itemPath)
 
         //Check if finished
         if (finished) {
@@ -369,13 +385,13 @@ export class AppBridge extends Server {
         }));
     }
 
-    private async actionReceivedMetadataData(request: Request, data: Uint8Array) {
+    private async actionReceivedMetadataData(request: Request) {
         //Get info
         const albumIndex: number = request.albumIndex;
         const metadataPath: string = this.host.albums[albumIndex].metadataPath;
 
         //Manage write data
-        const finished: boolean = await this.manageWriteData(request, data, metadataPath);
+        const finished: boolean = await this.manageWriteData(request, metadataPath);
 
         //Check if finished
         if (finished) {
@@ -418,49 +434,31 @@ export class AppBridge extends Server {
     }
 
     //Helpers
-    private async manageWriteData(request: Request, data: Uint8Array, filePath: string): Promise<boolean> {
-        //Get info
-        const lastModified: number = request.lastModified * 1000; //Dates get sent in seconds, we use millis
+    private async manageWriteData(request: Request, filePath: string): Promise<boolean> {
+        //Create backend request
+        const writeRequest: WriteRequest = {
+            //File info
+            filePath: filePath,
+            lastModified: request.lastModified * 1000,
 
-        const partIndex: number = request.partIndex;
-        const partMaxSize: number = request.partMaxSize;
-        const parts: number = request.parts;
+            //Parts info
+            partIndex: request.partIndex,
+            partMaxSize: request.partMaxSize,
+            parts: request.parts,
 
-        const isValid: boolean = data.length > 0;
-        const isLast: boolean = (partIndex + 1) == parts;
-
-        //Write file
-        if (isValid) {
-            //Write data on part offset
-            Files.writeFileWithOffset(filePath, partIndex * partMaxSize, data);
-
-            //Mark part as complete
-            request.partIndex += 1;
-
-            //Check if is the last part 
-            if (isLast) {
-                //Is the last part -> Update last modified timestamp
-                Files.setLastModified(filePath, lastModified);
-
-                //Log progress
-                const progressCurrent = (this.host.queueIndex + 1);
-                const progressSize = this.host.queue.length;
-                const percent = Util.round(progressCurrent / progressSize * 100, 2);
-                this.log(`(${progressCurrent}/${progressSize}, ${percent}%) ${isValid ? 'Success' : 'Error, data is invalid'}`);
-            } else {
-                //Not the last part -> Log progress
-                this.log(`Received part ${partIndex + 1}/${parts}`);
-
-                //Mark as not finished
-                return false;
-            }
-        } else {
-            //Log error
-            this.log('Invalid data');
+            //Progress
+            progressCurrent: this.host.queueIndex + 1,
+            progressSize: this.host.queue.length
         }
 
-        //Mark as finished
-        return true;
+        //Write data
+        const finished = await invoke<boolean>('server_write_data', { request: writeRequest });
+
+        //Mark part as complete
+        request.partIndex += 1;
+
+        //Return state
+        return finished;
     }
 
     private async requestNextQueueItem() {
@@ -556,7 +554,7 @@ export class AppBridge extends Server {
         await action();
     }
 
-    async downloadAlbums() {
+    public async downloadAlbums() {
         //Perform action
         this.performAction(async () => {
             //Start syncing
@@ -587,7 +585,9 @@ export class AppBridge extends Server {
 
             //Check albums
             for (let albumIndex = 0; albumIndex < this.host.albums.length; albumIndex++) {
+                //Get host album
                 const hostAlbum = this.host.albums[albumIndex];
+
                 //Get client album (item names list)
                 const clientAlbum = this.client.albums[albumIndex];
 
@@ -629,7 +629,7 @@ export class AppBridge extends Server {
         });
     }
 
-    async downloadMetadata() {
+    public async downloadMetadata() {
         //Perform action
         this.performAction(async () => {
             //Start syncing
@@ -676,7 +676,7 @@ export class AppBridge extends Server {
         });
     }
 
-    async uploadMetadata() {
+    public async uploadMetadata() {
         //Perform action
         this.performAction(async () => {
             //Start syncing

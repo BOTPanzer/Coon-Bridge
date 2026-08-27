@@ -1,10 +1,12 @@
-use std::sync::{
-    Arc, 
-    atomic::{AtomicBool, Ordering}
+use std::{
+    fs::OpenOptions, io::{Seek, SeekFrom, Write}, path::PathBuf, sync::{
+        Arc, 
+        atomic::{AtomicBool, Ordering}
+    }, time::{Duration, UNIX_EPOCH},
 };
 use futures_util::{SinkExt, StreamExt};
 use local_ip_address::local_ip;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use tauri::{AppHandle, Emitter, State};
 use tokio::{
     net::TcpListener, 
@@ -14,6 +16,7 @@ use tokio::{
     }
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
+
 
 
   /*$$$$$
@@ -44,6 +47,7 @@ pub struct ServerState {
     pub is_starting: AtomicBool,
     pub is_running: AtomicBool,
     pub is_connected: AtomicBool,
+    pub queued_binary_data: Mutex<Vec<u8>>,
 }
 
 impl ServerState {
@@ -53,15 +57,16 @@ impl ServerState {
             is_starting: AtomicBool::new(false),
             is_running: AtomicBool::new(false),
             is_connected: AtomicBool::new(false),
+            queued_binary_data: Mutex::new(Vec::new()),
         }
     }
 
-    pub fn emit_log(app: &AppHandle, message: impl Into<String>) {
+    pub fn log(app: &AppHandle, message: impl Into<String>) {
         let _ = app.emit("ws://log", message.into());
     }
 }
 
-//Actions
+//Server actions
 #[tauri::command]
 pub async fn server_start(app: AppHandle, state: State<'_, Arc<ServerState>>, port: u16) -> Result<String, String> {
     //Check if already running
@@ -155,7 +160,7 @@ pub async fn server_start(app: AppHandle, state: State<'_, Arc<ServerState>>, po
                         SenderMessage::Binary(b) => ws_sender.send(Message::Binary(b.into())).await,
                     };
                     if result.is_err() {
-                        ServerState::emit_log(&app_writer, "Failed to send WebSocket message");
+                        ServerState::log(&app_writer, "Failed to send WebSocket message");
                         break;
                     }
                 }
@@ -165,10 +170,17 @@ pub async fn server_start(app: AppHandle, state: State<'_, Arc<ServerState>>, po
             while let Some(msg) = ws_receiver.next().await {
                 match msg {
                     Ok(Message::Text(text)) => {
+                        //Notify frontend
                         let _ = thread_app.emit("ws://message-string", text.to_string());
                     }
                     Ok(Message::Binary(bin)) => {
-                        let _ = thread_app.emit("ws://message-binary", bin.to_vec());
+                        //Save binary data
+                        let mut data_guard = thread_state.queued_binary_data.lock().await;
+                        *data_guard = bin.to_vec();
+                        drop(data_guard);
+
+                        //Notify frontend
+                        let _ = thread_app.emit("ws://message-binary", ());
                     }
                     Ok(Message::Close(_)) | Err(_) => break,
                     _ => {}
@@ -211,8 +223,75 @@ pub async fn server_send_binary(state: State<'_, Arc<ServerState>>, data: Vec<u8
     let sender_lock = state.sender.lock().await;
     if let Some(sender) = sender_lock.as_ref() {
         sender.send(SenderMessage::Binary(data)).map_err(|e| e.to_string())?;
-    }
+    }   
 
     //Finish
     Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WriteRequest {
+    //File info
+    pub file_path: String,
+    pub last_modified: u64,
+
+    //Parts info
+    pub part_index: u32,
+    pub part_max_size: u32,
+    pub parts: u32,
+
+    //Progress
+    pub progress_current: i32, 
+    pub progress_size: i32
+}
+
+#[tauri::command]
+pub async fn server_write_data(app: AppHandle, state: tauri::State<'_, Arc<ServerState>>, request: WriteRequest) -> Result<bool, String> {
+    //Get info
+    let data = state.queued_binary_data.lock().await;
+    let is_valid = !data.is_empty();
+    let is_last = (request.part_index + 1) == request.parts;
+
+    //Write file
+    if is_valid {
+        //Write data on part offset
+        let offset = (request.part_index as u64) * (request.part_max_size as u64);
+        let mut file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(PathBuf::from(request.file_path))
+            .map_err(|e| e.to_string())?;
+
+        file.seek(SeekFrom::Start(offset)).map_err(|e| e.to_string())?;
+        file.write_all(&data).map_err(|e| e.to_string())?;
+
+        //Check if is the last part
+        if is_last {
+            //Is the last part -> Update last modified timestamp
+            let time = UNIX_EPOCH + Duration::from_millis(request.last_modified);
+            file.set_modified(time).map_err(|e| e.to_string())?;
+
+            //Log progress
+            let percent = if request.progress_size > 0 {
+                (request.progress_current as f64 / request.progress_size as f64 * 100.0 * 100.0).round() / 100.0
+            } else {
+                0.0
+            };
+
+            ServerState::log(&app, format!("({}/{}, {}%) Success", request.progress_current, request.progress_size, percent));
+        } else {
+            //Not the last part -> Log progress
+            ServerState::log(&app, format!("Received part {}/{}", request.part_index + 1, request.parts));
+
+            //Mark as not finished
+            return Ok(false);
+        }
+    } else {
+        //Log error
+        ServerState::log(&app, "Invalid data");
+    }
+
+    //Mark as finished
+    Ok(true)
 }

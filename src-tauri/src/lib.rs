@@ -78,7 +78,8 @@ pub fn run() {
             api::save_metadata_db,
             server::server_start,
             server::server_send_text,
-            server::server_send_binary
+            server::server_send_binary,
+            server::server_write_data,
         ])
         .manage(Arc::new(server::ServerState::new()))
         //App

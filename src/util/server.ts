@@ -73,9 +73,8 @@ export class Server {
         );
 
         this.unlistenFns.push(
-            await listen<number[]>('ws://message-binary', (event) => {
-                const data = Uint8Array.from(event.payload);
-                this.onReceivedBinary(data);
+            await listen<number[]>('ws://message-binary', (_) => {
+                this.onReceivedBinary();
             })
         );
     }
@@ -101,7 +100,7 @@ export class Server {
 
     //State
     private setAddress(IP: string, PORT: number) {
-        //Save info
+        //Update info
         this.IP = IP;
         this.PORT = PORT;
 
@@ -114,7 +113,7 @@ export class Server {
     }
 
     private setServerState(isRunning: boolean) {
-        //Save info
+        //Update info
         this._isRunning = isRunning;
 
         //Notify
@@ -130,7 +129,7 @@ export class Server {
     }
 
     private setConnectionState(isConnected: boolean, clientIP: string) {
-        //Save info
+        //Update info
         this._isConnected = isConnected;
 
         //Notify
@@ -146,12 +145,12 @@ export class Server {
     }
 
     //Data
-    protected async onReceivedString(str: string): Promise<void> {
-        this.log(`Received string: ${str.length} characters`);
+    protected async onReceivedString(_: string): Promise<void> {
+        this.log(`Received string`);
     }
 
-    protected async onReceivedBinary(data: Uint8Array): Promise<void> {
-        this.log(`Received bytes: ${data.length} bytes`);
+    protected async onReceivedBinary(): Promise<void> {
+        this.log(`Received bytes`);
     }
 
     protected async send(data: string | Uint8Array): Promise<void> {
