@@ -527,7 +527,7 @@ loading {
 /* Logs */
 .logs {
     /* Size */
-    max-height: 50vh;
+    height: 50vh;
     padding: 10px 16px;
 
     /* Layout */

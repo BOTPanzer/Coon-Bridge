@@ -196,11 +196,13 @@ export class MetadataScreen extends BaseScreen {
             //Look for its items without metadata
             for (const item of album.items) {
                 const itemMetadata = album.getItemMetadata(item.name);
-                if (!itemMetadata || !itemMetadata.caption || !itemMetadata.labels || !itemMetadata.text) {
+                if (itemMetadata && itemMetadata.caption && itemMetadata.labels && itemMetadata.text) {
+                    //Has metadata
+                    this.itemsWithMetadataCount++;
+                } else {
+                    //Doesn't have metadata
                     albumItemsWithoutMetadata.add(item);
                     this.itemsWithoutMetadataCount++;
-                } else {
-                    this.itemsWithMetadataCount++;
                 }
             }
         }

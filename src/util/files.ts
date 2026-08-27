@@ -1,4 +1,4 @@
-import { readFile, readTextFile, writeTextFile, mkdir, exists, rename, stat, remove } from '@tauri-apps/plugin-fs';
+import { readFile, readTextFile, writeTextFile, mkdir, exists, rename, copyFile, stat, remove } from '@tauri-apps/plugin-fs';
 import { dirname, join } from '@tauri-apps/api/path';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -81,6 +81,16 @@ export class Files {
 
     static async remove(path: string) {
         await remove(path);
+    }
+
+    static async copy(path: string, newPath: string) {
+        await copyFile(path, newPath)
+    }
+
+    static async clone(path: string, newPath: string) {
+        await Files.copy(path, newPath);
+        const lastModified = await Files.getLastModified(path)
+        await Files.setLastModified(newPath, lastModified);
     }
 
     static async createFolder(path: string) {

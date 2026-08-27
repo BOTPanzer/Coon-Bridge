@@ -16,16 +16,17 @@ import { Files } from '.';
                                                       \_____*/
 
 //Links
-export interface Link {
+export type Link = {
     albumFolder: string;
     metadataFile: string;
 }
 
 //Metadata
 export type MetadataItem = {
-    caption?: string;
-    labels?: string[];
-    text?: string[];
+    caption: string | null;
+    labels: string[] | null;
+    text: string[] | null;
+    embedding: number[] | null;
 }
 
 export type Metadata = Record<string, MetadataItem>
@@ -77,6 +78,7 @@ export class Album {
 
     private _items: Item[] = [];
     private metadata: Metadata = {};
+    private metadataModifiedItems: Set<string> = new Set();
 
     get items(): readonly Item[] { return this._items; }
 
@@ -106,14 +108,15 @@ export class Album {
                 folderPath: link.albumFolder,
                 ignoreVideos: ignoreVideos
             });
-            items = itemsData
-                .map(data => new Item(data.name, data.path, data.lastModified, data.isVideo));
+            items = itemsData.map(data => new Item(data.name, data.path, data.lastModified, data.isVideo));
         }
 
         //Check if metadata is valid
         if (loadMetadata && await Files.exists(link.metadataFile)) {
             //Valid -> Load metadata file info
-            metadata = await Files.readJSON(link.metadataFile) as Metadata;
+            metadata = await invoke<Metadata>('read_metadata_db', { 
+                dbPath: link.metadataFile 
+            });
         }
 
         //Create album
@@ -196,7 +199,66 @@ export class Album {
     }
 
     //Metadata management
+    itemHasMetadata(itemName: string): boolean {
+        //Check if item has metadata
+        return this.metadata[itemName] != undefined;
+    }
+
+    getItemMetadata(itemName: string): MetadataItem {
+        //Check if item has metadata
+        if (this.itemHasMetadata(itemName)) {
+            return this.metadata[itemName];
+        } else {
+            return {
+                caption: null,
+                labels: null,
+                text: null,
+                embedding: null
+            };
+        }
+    }
+
+    setItemMetadata(itemName: string, itemMetadata: MetadataItem) {
+        //Update item metadata
+        this.metadata[itemName] = itemMetadata;
+
+        //Mark item as modified
+        this.metadataModifiedItems.add(itemName);
+    }
+
+    cleanMetadata() {
+        //Create new metadata
+        const newMetadata: Metadata = {};
+
+        //Move items with metadata to the new metadata var
+        for (const item of this.items) {
+            //Get item name
+            const itemName = item.name;
+
+            //Check if item has metadata
+            if (this.itemHasMetadata(itemName)) {
+                //Has metadata -> Add key to new metadata
+                newMetadata[itemName] = this.getItemMetadata(itemName);
+            }
+        }
+
+        //Check for deleted metadata items
+        for (const itemName of Object.keys(this.metadata)) {
+            //Check if item exists in new metadata
+            if (newMetadata[itemName] == undefined) {
+                //Doesn't exist -> Mark item as deleted
+                this.metadataModifiedItems.add(itemName);
+            }
+        }
+
+        //Replace old metadata with the new one
+        this.metadata = newMetadata;
+    }
+
     async saveMetadata(backup: boolean = true) {
+        //No changes
+        if (this.metadataModifiedItems.size <= 0) return
+
         //Check if should backup
         if (backup && await Files.exists(this.metadataPath)) {
             //Create new backup path
@@ -209,50 +271,30 @@ export class Album {
             }
 
             //Backup current metadata file
-            await Files.rename(this.metadataPath, metadataBackupPath);
+            await Files.clone(this.metadataPath, metadataBackupPath);
         }
 
-        //Save file
-        Files.saveJSON(this.metadataPath, this.metadata, false);
-    }
+        //Check for updated or deleted items
+        const updated: Record<string, MetadataItem> = {};
+        const deleted: string[] = [];
 
-    cleanMetadata() {
-        //Create new metadata
-        const newMetadata: Metadata = {};
-
-        //Sort items
-        this.sortItems();
-
-        //Check each item to see if it has metadata
-        for (const item of this.items) {
-            //Check if item has metadata
-            if (this.itemHasMetadata(item.name)) {
-                //Has metadata -> Add key to new metadata
-                newMetadata[item.name] = this.getItemMetadata(item.name);
+        for (const key of this.metadataModifiedItems) {
+            if (this.itemHasMetadata(key)) {
+                updated[key] = this.metadata[key];
+            } else {
+                deleted.push(key);
             }
         }
 
-        //Replace old metadata with the new one
-        this.metadata = newMetadata;
-    }
+        //Save file
+        await invoke('save_metadata_db', {
+            dbPath: this.metadataPath,
+            updated: updated,
+            deleted: deleted
+        });
 
-    itemHasMetadata(itemName: string): boolean {
-        //Check if item has metadata
-        return this.metadata[itemName] != undefined;
-    }
-
-    getItemMetadata(itemName: string): MetadataItem {
-        //Check if item has metadata
-        if (this.itemHasMetadata(itemName)) {
-            return this.metadata[itemName];
-        } else {
-            return {}
-        }
-    }
-
-    setItemMetadata(itemName: string, itemMetadata: MetadataItem) {
-        //Update item metadata
-        this.metadata[itemName] = itemMetadata
+        //Clear modified items
+        this.metadataModifiedItems.clear();
     }
 
 }

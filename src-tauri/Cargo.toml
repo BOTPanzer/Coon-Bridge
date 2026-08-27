@@ -24,6 +24,7 @@ tokio-tungstenite = "0.30.0"
 futures-util = "0.3.33"
 tokio = "1.53.1"
 local-ip-address = "0.6.13"
+rusqlite = { version = "0.31", features = ["bundled"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-cli = "2"

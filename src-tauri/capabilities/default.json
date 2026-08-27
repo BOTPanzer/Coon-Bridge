@@ -37,6 +37,11 @@
         {
             "identifier": "fs:allow-stat",
             "allow": [{ "path": "**" }]
+        },
+        "fs:allow-copy-file",
+        {
+            "identifier": "fs:allow-copy-file",
+            "allow": [{ "path": "**" }]
         }
     ]
 }

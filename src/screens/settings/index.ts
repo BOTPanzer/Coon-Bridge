@@ -159,7 +159,7 @@ export class SettingsScreen extends BaseScreen {
                 multiple: false,
                 filters: [{
                     name: 'Select an album folder',
-                    extensions: ['json']
+                    extensions: []
                 }]
             });
 
@@ -183,7 +183,7 @@ export class SettingsScreen extends BaseScreen {
                 multiple: false,
                 filters: [{
                     name: 'Select a metadata file',
-                    extensions: ['json']
+                    extensions: ['db']
                 }]
             });
 
