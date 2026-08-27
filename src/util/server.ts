@@ -36,38 +36,7 @@ export class Server {
 
     public get logs(): readonly string[] { return this._logs; }
 
-
     //Connection
-    public async start(PORT: number = 6969): Promise<void> {
-        //Check if already running
-        if (this.isRunning) {
-            this.log('Server is already running');
-            return;
-        }
-
-        //Check if already starting
-        if (this.isStarting) {
-            this.log('Server is already starting');
-            return;
-        }
-        this._isStarting = true;
-
-        //Log starting
-        this.log(`Starting server in port ${PORT}...`);
-
-        //Start server
-        try {
-            await this.registerServerEvents();
-            this.IP = await invoke<string>('server_start', { port: PORT });
-            this.PORT = PORT;
-            this.onAddressIsKnown(this.IP, this.PORT);
-        } catch (e: any) {
-            this.log(`Internal error: ${e}`);
-            this.setServerState(false);
-        }
-        this._isStarting = false;
-    }
-
     private async registerServerEvents(): Promise<void> {
         //Clear old events
         this.clearServerEvents();
@@ -75,13 +44,25 @@ export class Server {
         //Register new events
         this.unlistenFns.push(
             await listen<boolean>('ws://server-state', (event) => {
-                this.setServerState(event.payload);
+                this.onServerStateChanged(event.payload);
             })
         );
 
         this.unlistenFns.push(
             await listen<{ connected: boolean; ip: string }>('ws://connection-state', (event) => {
-                this.setConnectionState(event.payload.connected, event.payload.ip);
+                this.onConnectionStateChanged(event.payload.connected, event.payload.ip);
+            })
+        );
+
+        this.unlistenFns.push(
+            await listen<string>('ws://log', (event) => {
+                this.log(event.payload);
+            })
+        );
+
+        this.unlistenFns.push(
+            await listen<string>('ws://error', (event) => {
+                this.log(`Internal error: ${event.payload}`);
             })
         );
 
@@ -98,11 +79,6 @@ export class Server {
             })
         );
 
-        this.unlistenFns.push(
-            await listen<string>('ws://error', (event) => {
-                this.log(`Internal error: ${event.payload}`);
-            })
-        );
     }
 
     private clearServerEvents(): void {
@@ -110,32 +86,48 @@ export class Server {
         this.unlistenFns = [];
     }
 
+    public async start(PORT: number = 6969): Promise<void> {
+        try {
+            //Register rust events
+            await this.registerServerEvents();
+
+            //Start server
+            this.IP = await invoke<string>('server_start', { port: PORT });
+            this.PORT = PORT;
+            this.onAddressIsKnown(this.IP, this.PORT);
+        } catch (e: any) {
+            //Failed to start server
+            this.log(e);
+        }
+    }
+
     //State
-    private setServerState(isRunning: boolean) {
-        //Update state
-        this._isRunning = isRunning;
-        this.onServerStateChanged(isRunning);
-    }
-
-    private setConnectionState(isConnected: boolean, clientIP: string) {
-        //Update state
-        this._isConnected = isConnected;
-        this.onConnectionStateChanged(isConnected, clientIP);
-    }
-
     protected onAddressIsKnown(IP: string, PORT: number): void {
+        //Save info
+        this.IP = IP;
+        this.PORT = PORT;
+
+        //Log
         this.log(`Server address: ${IP}:${PORT}`);
     }
 
     protected onServerStateChanged(isRunning: boolean): void {
+        //Save info
+        this._isRunning = isRunning;
+
+        //Log
         if (isRunning) {
             this.log('Server is now running');
         } else {
-            this.log('Server is now not running');
+            this.log('Server is now stopped');
         }
     }
 
     protected onConnectionStateChanged(isConnected: boolean, clientIP: string): void {
+        //Save info
+        this._isConnected = isConnected;
+
+        //Log
         if (isConnected) {
             this.log(`Connected to client with IP ${clientIP}`);
         } else {
