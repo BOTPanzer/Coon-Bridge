@@ -44,13 +44,13 @@ export class Server {
         //Register new events
         this.unlistenFns.push(
             await listen<boolean>('ws://server-state', (event) => {
-                this.onServerStateChanged(event.payload);
+                this.setServerState(event.payload);
             })
         );
 
         this.unlistenFns.push(
             await listen<{ connected: boolean; ip: string }>('ws://connection-state', (event) => {
-                this.onConnectionStateChanged(event.payload.connected, event.payload.ip);
+                this.setConnectionState(event.payload.connected, event.payload.ip);
             })
         );
 
@@ -78,7 +78,6 @@ export class Server {
                 this.onReceivedBinary(data);
             })
         );
-
     }
 
     private clearServerEvents(): void {
@@ -92,9 +91,8 @@ export class Server {
             await this.registerServerEvents();
 
             //Start server
-            this.IP = await invoke<string>('server_start', { port: PORT });
-            this.PORT = PORT;
-            this.onAddressIsKnown(this.IP, this.PORT);
+            const IP = await invoke<string>('server_start', { port: PORT });
+            this.setAddress(IP, PORT);
         } catch (e: any) {
             //Failed to start server
             this.log(e);
@@ -102,20 +100,28 @@ export class Server {
     }
 
     //State
-    protected onAddressIsKnown(IP: string, PORT: number): void {
+    private setAddress(IP: string, PORT: number) {
         //Save info
         this.IP = IP;
         this.PORT = PORT;
 
-        //Log
+        //Notify
+        this.onAddressIsKnown(IP, PORT);
+    }
+
+    protected onAddressIsKnown(IP: string, PORT: number): void {
         this.log(`Server address: ${IP}:${PORT}`);
     }
 
-    protected onServerStateChanged(isRunning: boolean): void {
+    private setServerState(isRunning: boolean) {
         //Save info
         this._isRunning = isRunning;
 
-        //Log
+        //Notify
+        this.onServerStateChanged(isRunning);
+    }
+
+    protected onServerStateChanged(isRunning: boolean): void {
         if (isRunning) {
             this.log('Server is now running');
         } else {
@@ -123,11 +129,15 @@ export class Server {
         }
     }
 
-    protected onConnectionStateChanged(isConnected: boolean, clientIP: string): void {
+    private setConnectionState(isConnected: boolean, clientIP: string) {
         //Save info
         this._isConnected = isConnected;
 
-        //Log
+        //Notify
+        this.onConnectionStateChanged(isConnected, clientIP);
+    }
+
+    protected onConnectionStateChanged(isConnected: boolean, clientIP: string): void {
         if (isConnected) {
             this.log(`Connected to client with IP ${clientIP}`);
         } else {
