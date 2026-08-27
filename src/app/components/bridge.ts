@@ -325,7 +325,7 @@ export class AppBridge extends Server {
         this.host.request = request;
 
         //Request data
-        await this.send(JSON.stringify({
+        await this.sendMessage(JSON.stringify({
             'action': 'requestItemData',
             'albumIndex': request.albumIndex,
             'itemIndex': request.itemIndex,
@@ -352,7 +352,7 @@ export class AppBridge extends Server {
             await this.requestNextQueueItem();
         } else {
             //Not finished -> Request next part
-            await this.send(JSON.stringify({
+            await this.sendMessage(JSON.stringify({
                 'action': 'requestItemData',
                 'albumIndex': albumIndex,
                 'itemIndex': itemIndex,
@@ -379,7 +379,7 @@ export class AppBridge extends Server {
         this.host.request = request;
 
         //Request data
-        await this.send(JSON.stringify({
+        await this.sendMessage(JSON.stringify({
             'action': 'requestMetadataData',
             'albumIndex': request.albumIndex
         }));
@@ -399,7 +399,7 @@ export class AppBridge extends Server {
             await this.requestNextQueueMetadata();
         } else {
             //Not finished -> Request next part
-            await this.send(JSON.stringify({
+            await this.sendMessage(JSON.stringify({
                 'action': 'requestMetadataData',
                 'albumIndex': albumIndex
             }));
@@ -416,7 +416,7 @@ export class AppBridge extends Server {
         this.log(`- Sending metadata for album ${albumIndex}...`);
 
         //Send info
-        await this.send(JSON.stringify({
+        await this.sendMessage(JSON.stringify({
             'action': 'metadataInfo',
             'albumIndex': albumIndex,
             'lastModified': (await Files.getLastModified(metadataPath)) / 1000 //Dates get sent in seconds, we use millis
@@ -428,9 +428,8 @@ export class AppBridge extends Server {
         const albumIndex: number = message['albumIndex'];
         const metadataPath: string = this.host.albums[albumIndex].metadataPath;
 
-        //Send info
-        const bytes = await Files.readBytes(metadataPath);
-        await this.send(bytes ?? Uint8Array.from([]));
+        //Send file
+        await this.sendFile(metadataPath);
     }
 
     //Helpers
@@ -474,7 +473,7 @@ export class AppBridge extends Server {
         if (queueIndex >= queueSize) {
             //No items left -> Finish sync
             this.actionEndSync('Finished downloading albums');
-            await this.send(JSON.stringify({
+            await this.sendMessage(JSON.stringify({
                 'action': 'endSync'
             }));
         } else {
@@ -483,7 +482,7 @@ export class AppBridge extends Server {
 
             //Request next
             this.log(`- Requesting item "${this.client.albums[next.albumIndex][next.itemIndex]}"...`);
-            await this.send(JSON.stringify({
+            await this.sendMessage(JSON.stringify({
                 'action': 'requestItemInfo',
                 'albumIndex': next.albumIndex,
                 'itemIndex': next.itemIndex,
@@ -506,7 +505,7 @@ export class AppBridge extends Server {
         if (queueIndex >= queueSize) {
             //No items left -> Finish sync
             this.actionEndSync('Finished downloading metadata');
-            await this.send(JSON.stringify({
+            await this.sendMessage(JSON.stringify({
                 'action': 'endSync'
             }));
         } else {
@@ -515,7 +514,7 @@ export class AppBridge extends Server {
 
             //Request next
             this.log(`- Requesting metadata for album ${next.albumIndex}...`);
-            await this.send(JSON.stringify({
+            await this.sendMessage(JSON.stringify({
                 'action': 'requestMetadataInfo',
                 'albumIndex': next.albumIndex
             }));
@@ -707,7 +706,7 @@ export class AppBridge extends Server {
             }
 
             //Start metadata request
-            await this.send(JSON.stringify({
+            await this.sendMessage(JSON.stringify({
                 action: 'startMetadataRequest'
             }));
         });

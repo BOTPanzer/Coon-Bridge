@@ -206,7 +206,7 @@ pub async fn server_start(app: AppHandle, state: State<'_, Arc<ServerState>>, po
 }
 
 #[tauri::command]
-pub async fn server_send_text(state: State<'_, Arc<ServerState>>, message: String) -> Result<(), String> {
+pub async fn server_send_message(state: State<'_, Arc<ServerState>>, message: String) -> Result<(), String> {
     //Send text message
     let sender_lock = state.sender.lock().await;
     if let Some(sender) = sender_lock.as_ref() {
@@ -218,12 +218,15 @@ pub async fn server_send_text(state: State<'_, Arc<ServerState>>, message: Strin
 }
 
 #[tauri::command]
-pub async fn server_send_binary(state: State<'_, Arc<ServerState>>, data: Vec<u8>) -> Result<(), String> {
+pub async fn server_send_file(state: tauri::State<'_, Arc<ServerState>>, file_path: String) -> Result<(), String> {
+    //Read file
+    let bytes = std::fs::read(file_path).unwrap_or_default();
+
     //Send binary message
     let sender_lock = state.sender.lock().await;
     if let Some(sender) = sender_lock.as_ref() {
-        sender.send(SenderMessage::Binary(data)).map_err(|e| e.to_string())?;
-    }   
+        sender.send(SenderMessage::Binary(bytes)).map_err(|e| e.to_string())?;
+    }
 
     //Finish
     Ok(())

@@ -78,8 +78,8 @@ pub fn run() {
             db::read_metadata_db,
             db::save_metadata_db,
             server::server_start,
-            server::server_send_text,
-            server::server_send_binary,
+            server::server_send_message,
+            server::server_send_file,
             server::server_write_data,
         ])
         .manage(Arc::new(server::ServerState::new()))

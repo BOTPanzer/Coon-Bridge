@@ -153,16 +153,20 @@ export class Server {
         this.log(`Received bytes`);
     }
 
-    protected async send(data: string | Uint8Array): Promise<void> {
+    protected async sendMessage(data: string): Promise<void> {
         //Check if connected
         if (!this.isConnected) return;
 
-        //Send data
-        if (typeof data === 'string') {
-            await invoke('server_send_text', { message: data });
-        } else {
-            await invoke('server_send_binary', { data: Array.from(data) });
-        }
+        //Send message
+        await invoke('server_send_message', { message: data });
+    }
+
+    protected async sendFile(path: string): Promise<void> {
+        //Check if connected
+        if (!this.isConnected) return;
+
+        //Send file
+        await invoke('server_send_file', { filePath: path });
     }
 
     //Logs
