@@ -1,4 +1,5 @@
-mod api;
+mod db;
+mod files;
 mod server;
 use std::sync::Arc;
 use tauri::{
@@ -71,11 +72,11 @@ pub fn run() {
         })
         //Custom API
         .invoke_handler(tauri::generate_handler![
-            api::list_folder_items,
-            api::write_file_at_offset,
-            api::set_last_modified,
-            api::read_metadata_db,
-            api::save_metadata_db,
+            files::list_folder_items,
+            files::write_file_at_offset,
+            files::set_last_modified,
+            db::read_metadata_db,
+            db::save_metadata_db,
             server::server_start,
             server::server_send_text,
             server::server_send_binary,
