@@ -3,7 +3,6 @@ import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import html from './index.html?raw';
 import { Album, DescriptionModel, Item, Util } from '../../util';
-import { load_image } from '@huggingface/transformers';
 
 export class MetadataScreen extends BaseScreen {
 
@@ -19,7 +18,7 @@ export class MetadataScreen extends BaseScreen {
     elementSearchDialogForm!: HTMLElement
     elementSearchDialogResults!: HTMLElement
     elementClean!: HTMLButtonElement
-    elementFix!: HTMLButtonElement
+    elementGenerate!: HTMLButtonElement
     elementLogs!: HTMLElement
 
     //Screen
@@ -44,7 +43,7 @@ export class MetadataScreen extends BaseScreen {
         this.elementSearchDialogForm = document.getElementById('metadata-search-dialog-form')!;
         this.elementSearchDialogResults = document.getElementById('metadata-search-dialog-results')!;
         this.elementClean = document.getElementById('metadata-clean') as HTMLButtonElement;
-        this.elementFix = document.getElementById('metadata-fix') as HTMLButtonElement;
+        this.elementGenerate = document.getElementById('metadata-generate') as HTMLButtonElement;
         this.elementLogs = document.getElementById('metadata-logs')!;
 
         //Assign back event
@@ -96,16 +95,16 @@ export class MetadataScreen extends BaseScreen {
             });
         }
 
-        //Assign fix metadata event
-        this.elementFix!.onclick = () => {
+        //Assign generate metadata event
+        this.elementGenerate!.onclick = () => {
             //Working
             if (this.isWorking) return;
 
             //Start working
             this.setWorking(true);
 
-            //Fix metadata
-            this.fixMetadata().then(() => {
+            //Generate metadata
+            this.generateMetadata().then(() => {
                 //Finish working
                 this.setWorking(false);
             });
@@ -147,7 +146,7 @@ export class MetadataScreen extends BaseScreen {
         this.elementBack.disabled = working;
         this.elementSearch.disabled = working;
         this.elementClean.disabled = working;
-        this.elementFix.disabled = working;
+        this.elementGenerate.disabled = working;
     }
 
     //Albums
@@ -321,9 +320,15 @@ export class MetadataScreen extends BaseScreen {
         this.setWorking(false);
     }
 
-    private async fixMetadata() {
-        //Create models
+    private async generateMetadata() {
+        //Load model
         const descriptionModel: DescriptionModel = new DescriptionModel();
+        this.log('Loading description model...');
+        await descriptionModel.load();
+
+        //Progress checks
+        const progressTotal: number = this.itemsWithoutMetadataCount;
+        let itemsFixedTotalCount: number = 0;
 
         //Fix items
         for (const [albumIndex, itemsWithoutMetadata] of this.itemsWithoutMetadata.entries()) {
@@ -332,43 +337,44 @@ export class MetadataScreen extends BaseScreen {
 
             //Get album
             const album: Album = this.albums[albumIndex];
-            let albumWasSaved: boolean = false;
-            let itemsFixedCount: number = 0;
+            let itemsFixedAlbumCount: number = 0;
+            let wasAlbumSaved: boolean = false;
 
             //Fix album items
             for (let i = itemsWithoutMetadata.length - 1; i >= 0; i--) {
                 //Get item info
                 const item = itemsWithoutMetadata[i];
-                this.log(`- ${item.name}`);
+                const progressCurrent = itemsFixedTotalCount + 1;
+                const progressCurrentPercentage = Util.round(itemsFixedTotalCount / progressTotal * 100, 2);
+                this.log(`- ${item.name} (${progressCurrent}/${progressTotal}, ${progressCurrentPercentage}%)`);
 
                 //Get metadata info
+                const missingTasks = [];
                 const itemMetadata = item.getMetadata();
                 let hasCaption: boolean = typeof itemMetadata.caption == 'string';
+                if (!hasCaption) missingTasks.push('caption');
                 let hasLabels: boolean = Array.isArray(itemMetadata.labels);
+                if (!hasLabels) missingTasks.push('labels');
                 let hasText: boolean = Array.isArray(itemMetadata.text);
+                if (!hasText) missingTasks.push('text');
 
-                //Load image
-                const image = await load_image(convertFileSrc(item.path));
+                //Fix caption, labels, and text
+                if (missingTasks.length > 0) {
+                    this.log(`Generating ${missingTasks.join(', ')}...`);
+                    const result = await descriptionModel.processImage(item.path, !hasCaption, !hasLabels, !hasText);
 
-                //Fix caption
-                if (!itemMetadata.caption) {
-                    this.log(`Generating caption...`);
-                    itemMetadata.caption = await descriptionModel.generateCaption(image);
-                    hasCaption = true;
-                }
-
-                //Fix labels
-                if (!itemMetadata.labels) {
-                    this.log(`Generating labels...`);
-                    itemMetadata.labels = await descriptionModel.generateLabels(image);
-                    hasLabels = true;
-                }
-
-                //Fix text
-                if (!itemMetadata.text) {
-                    this.log(`Detecting text...`);
-                    itemMetadata.text = await descriptionModel.generateText(image);
-                    hasText = true;
+                    if (!itemMetadata.caption) {
+                        itemMetadata.caption = result.caption;
+                        hasCaption = true;
+                    }
+                    if (!itemMetadata.labels) {
+                        itemMetadata.labels = result.labels;
+                        hasLabels = true;
+                    }
+                    if (!itemMetadata.text) {
+                        itemMetadata.text = result.text;
+                        hasText = true;
+                    }
                 }
 
                 //Update metadata
@@ -382,23 +388,24 @@ export class MetadataScreen extends BaseScreen {
                 this.itemsWithoutMetadataCount--;
                 this.itemsWithMetadataCount++;
                 this.notifyItemsWithMetadataChanged();
-                itemsFixedCount++;
+                itemsFixedTotalCount++;
+                itemsFixedAlbumCount++;
 
                 //Check if should save
-                if (itemsFixedCount % 5 == 0) {
+                if (itemsFixedAlbumCount % 5 == 0) {
                     //Save
-                    await album.saveMetadata(!albumWasSaved);
-                    albumWasSaved = true;
+                    await album.saveMetadata(!wasAlbumSaved);
+                    wasAlbumSaved = true;
                 }
             }
 
             //Sort album metadata keys & save
             album.cleanMetadata();
-            await album.saveMetadata(!albumWasSaved);
+            await album.saveMetadata(!wasAlbumSaved);
         }
         this.log(`Finished fixing metadata.`);
 
-        //Unload models
+        //Unload model
         await descriptionModel.unload();
     }
 

@@ -11,7 +11,6 @@
         "tauri": "tauri"
     },
     "dependencies": {
-        "@huggingface/transformers": "^4.2.0",
         "@tauri-apps/api": "^2",
         "@tauri-apps/plugin-cli": "^2.4.1",
         "@tauri-apps/plugin-dialog": "^2.7.2",

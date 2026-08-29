@@ -1,6 +1,5 @@
-mod db;
-mod files;
-mod server;
+mod components;
+use components::{db, files, server, florence};
 use std::sync::Arc;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
@@ -81,8 +80,12 @@ pub fn run() {
             server::server_send_message,
             server::server_send_file,
             server::server_write_data,
+            florence::load_model,
+            florence::unload_model,
+            florence::process_image,
         ])
         .manage(Arc::new(server::ServerState::new()))
+        .manage(Arc::new(florence::Florence2State::new()))
         //App
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
