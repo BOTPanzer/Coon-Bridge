@@ -120,10 +120,18 @@ class DescriptionModel:
 # |  $$$$$$/|  $$$$$$$| $$         \  $/  |  $$$$$$$| $$
 #  \______/  \_______/|__/          \_/    \_______/|__/
 
+# Logging to file
 def log(text: str):
     with open("python_debug.log", "a", encoding="utf-8") as f:
         f.write(text)
 
+# Last image cache
+last_image_cache = {
+    "path": None,
+    "data": None
+}
+
+# App
 if __name__ == "__main__":
 
     # Import libraries
@@ -154,8 +162,16 @@ if __name__ == "__main__":
             elif cmd == "process":
                 # Prepare image
                 image_path = req["image_path"]
-                ImageFile.LOAD_TRUNCATED_IMAGES = True
-                image: ImageFile = Image.open(image_path).convert("RGB")
+                image_data = None
+                if (last_image_cache["path"] == image_path):
+                    # Load image from last image cache
+                    image_data = last_image_cache["data"]
+                else:
+                    # Load image as new
+                    ImageFile.LOAD_TRUNCATED_IMAGES = True
+                    image_data = Image.open(image_path).convert("RGB")
+                    last_image_cache["path"] = image_path
+                    last_image_cache["data"] = image_data
 
                 # Check what to process
                 get_cap = req.get("caption", True)
@@ -163,7 +179,7 @@ if __name__ == "__main__":
                 get_txt = req.get("text", True)
 
                 # Process image
-                res = model.process_image(image, get_caption=get_cap, get_labels=get_lbl, get_text=get_txt)
+                res = model.process_image(image_data, get_caption=get_cap, get_labels=get_lbl, get_text=get_txt)
                 print(json.dumps({"status": "ok", "result": res}), flush=True)
             else:
                 # Error

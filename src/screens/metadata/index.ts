@@ -349,32 +349,30 @@ export class MetadataScreen extends BaseScreen {
                 this.log(`- ${item.name} (${progressCurrent}/${progressTotal}, ${progressCurrentPercentage}%)`);
 
                 //Get metadata info
-                const missingTasks = [];
                 const itemMetadata = item.getMetadata();
                 let hasCaption: boolean = typeof itemMetadata.caption == 'string';
-                if (!hasCaption) missingTasks.push('caption');
                 let hasLabels: boolean = Array.isArray(itemMetadata.labels);
-                if (!hasLabels) missingTasks.push('labels');
                 let hasText: boolean = Array.isArray(itemMetadata.text);
-                if (!hasText) missingTasks.push('text');
 
-                //Fix caption, labels, and text
-                if (missingTasks.length > 0) {
-                    this.log(`Generating ${missingTasks.join(', ')}...`);
-                    const result = await descriptionModel.processImage(item.path, !hasCaption, !hasLabels, !hasText);
+                //Generate caption
+                if (!hasCaption) {
+                    this.log('Generating caption...');
+                    itemMetadata.caption = await descriptionModel.generateCaption(item.path);
+                    hasCaption = true;
+                }
 
-                    if (!itemMetadata.caption) {
-                        itemMetadata.caption = result.caption;
-                        hasCaption = true;
-                    }
-                    if (!itemMetadata.labels) {
-                        itemMetadata.labels = result.labels;
-                        hasLabels = true;
-                    }
-                    if (!itemMetadata.text) {
-                        itemMetadata.text = result.text;
-                        hasText = true;
-                    }
+                //Generate labels
+                if (!hasLabels) {
+                    this.log('Generating labels...');
+                    itemMetadata.labels = await descriptionModel.generateLabels(item.path);
+                    hasLabels = true;
+                }
+
+                //Generate text
+                if (!hasText) {
+                    this.log('Detecting text...');
+                    itemMetadata.text = await descriptionModel.generateText(item.path);
+                    hasText = true;
                 }
 
                 //Update metadata
