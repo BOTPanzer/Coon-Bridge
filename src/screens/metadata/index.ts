@@ -38,9 +38,9 @@ export class MetadataScreen extends BaseScreen {
         this.elementBack = document.getElementById('metadata-back') as HTMLButtonElement;
         this.elementSearch = document.getElementById('metadata-search') as HTMLButtonElement;
         this.elementSearchDialog = document.getElementById('metadata-search-dialog') as HTMLDialogElement;
+        this.elementSearchDialogForm = document.getElementById('metadata-search-dialog-form')!;
         this.elementSearchDialogInput = document.getElementById('metadata-search-dialog-input') as HTMLInputElement;
         this.elementSearchDialogSearch = document.getElementById('metadata-search-dialog-search') as HTMLButtonElement;
-        this.elementSearchDialogForm = document.getElementById('metadata-search-dialog-form')!;
         this.elementSearchDialogResults = document.getElementById('metadata-search-dialog-results')!;
         this.elementClean = document.getElementById('metadata-clean') as HTMLButtonElement;
         this.elementGenerate = document.getElementById('metadata-generate') as HTMLButtonElement;
@@ -71,13 +71,25 @@ export class MetadataScreen extends BaseScreen {
             this.toggleSearchResults(false);
         });
 
-        this.elementSearchDialogSearch.onclick = () => {
+        const onSearch = () => {
             //Get query
             const query = this.elementSearchDialogInput.value;
             if (query.length < 3) return;
 
             //Search
             this.search(query);
+        }
+
+        this.elementSearchDialogInput.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                Util.interceptEvent(e);
+                onSearch();
+            }
+        };
+
+        this.elementSearchDialogSearch.onclick = (e) => {
+            Util.interceptEvent(e);
+            onSearch();
         }
 
         //Assign clean metadata event
