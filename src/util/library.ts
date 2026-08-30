@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Files } from '.';
+import { Files, Util } from '.';
 
 
 
@@ -148,49 +148,56 @@ export class Album {
 
     //Actions
     search(query: string): Item[] {
+        //Tokenize query
+        const queryTokens = Util.tokenize(query);
+
         //Create results list
-        const results: Item[] = [];
+        const scoredResults: { item: Item; score: number }[] = [];
+
+        //Calculate average document length across items for BM25
+        let totalTokens = 0;
+        let validDocs = 0;
+
+        for (const item of this.items) {
+            const itemMetadata = this.getItemMetadata(item.name);
+            const textPool = [
+                itemMetadata.caption || '',
+                ...(itemMetadata.labels || []),
+                ...(itemMetadata.text || [])
+            ].join(' ');
+
+            const tokens = Util.tokenize(textPool);
+            if (tokens.length > 0) {
+                totalTokens += tokens.length;
+                validDocs++;
+            }
+        }
+
+        const avgDocLen = validDocs > 0 ? totalTokens / validDocs : 1;
 
         //Check all items
         for (const item of this.items) {
             //Get item metadata
             const itemMetadata = this.getItemMetadata(item.name);
 
-            //Check caption
-            if (itemMetadata.caption && itemMetadata.caption.toLowerCase().includes(query)) {
-                results.add(item)
-                continue;
-            }
+            //Combine all text sources for scoring 😸
+            const textPool = [
+                itemMetadata.caption || '',
+                ...(itemMetadata.labels || []),
+                ...(itemMetadata.text || [])
+            ].join(' ');
 
-            //Check labels
-            if (itemMetadata.labels) {
-                let added = false;
-                for (const label of itemMetadata.labels) {
-                    if (label.toLowerCase().includes(query)) {
-                        results.add(item)
-                        added = true;
-                        break;
-                    }
-                }
-                if (added) continue;
-            }
+            //Calculate BM25 score
+            const score = Util.scoreBM25(queryTokens, textPool, avgDocLen);
 
-            //Check labels
-            if (itemMetadata.text) {
-                let added = false;
-                for (const text of itemMetadata.text) {
-                    if (text.toLowerCase().includes(query)) {
-                        results.add(item)
-                        added = true;
-                        break;
-                    }
-                }
-                if (added) continue;
+            //Only keep relevant matches
+            if (score > 0) {
+                scoredResults.push({ item, score });
             }
         }
 
         //Return results
-        return results;
+        return scoredResults.map(res => res.item);
     }
 
     sortItems() {

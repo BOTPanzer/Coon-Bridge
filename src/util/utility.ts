@@ -61,4 +61,34 @@ export class Util {
         return string.substring(0, index) + char + string.substring(index + 1);
     }
 
+    static tokenize(text: string): string[] {
+        return text
+            .toLowerCase()
+            .replace(/[^\w\s]/g, '')
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(word => (word.endsWith('s') && word.length > 3 ? word.slice(0, -1) : word));
+    }
+
+    static scoreBM25(queryTokens: string[], caption: string, avgDocLen: number, k1 = 1.2, b = 0.75): number {
+        const docTokens = Util.tokenize(caption);
+        if (queryTokens.length === 0 || docTokens.length === 0) return 0;
+
+        const docLen = docTokens.length;
+        let score = 0;
+
+        for (const token of queryTokens) {
+            // Count term frequency in the document
+            const tf = docTokens.filter(t => t === token).length;
+            if (tf > 0) {
+                // BM25 Term Frequency weighting component 💫
+                const numerator = tf * (k1 + 1);
+                const denominator = tf + k1 * (1 - b + b * (docLen / avgDocLen));
+                score += numerator / denominator;
+            }
+        }
+
+        return score;
+    }
+
 }
