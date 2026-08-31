@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 # Machine learning models
-src-python/florence2/*
+src-python/models/*

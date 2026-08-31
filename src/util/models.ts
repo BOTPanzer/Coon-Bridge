@@ -2,26 +2,23 @@ import { invoke } from '@tauri-apps/api/core';
 
 
 
-  /*$$$$$  /$$$$$$
- /$$__  $$|_  $$_/
-| $$  \ $$  | $$
-| $$$$$$$$  | $$
-| $$__  $$  | $$
-| $$  | $$  | $$
-| $$  | $$ /$$$$$$
-|__/  |__/|_____*/
-
+ /*$      /$$                 /$$           /$$
+| $$$    /$$$                | $$          | $$
+| $$$$  /$$$$  /$$$$$$   /$$$$$$$  /$$$$$$ | $$  /$$$$$$$
+| $$ $$/$$ $$ /$$__  $$ /$$__  $$ /$$__  $$| $$ /$$_____/
+| $$  $$$| $$| $$  \ $$| $$  | $$| $$$$$$$$| $$|  $$$$$$
+| $$\  $ | $$| $$  | $$| $$  | $$| $$_____/| $$ \____  $$
+| $$ \/  | $$|  $$$$$$/|  $$$$$$$|  $$$$$$$| $$ /$$$$$$$/
+|__/     |__/ \______/  \_______/ \_______/|__/|______*/
 
 export class DescriptionModel {
 
-    private modelPath: string = 'X:/Projects/Web/CoonBridge/models/florence_2';
-
     async load(): Promise<void> {
-        return await invoke('load_model', { modelPath: this.modelPath });
+        await invoke('load_description_model');
     }
 
     async unload(): Promise<void> {
-        return await invoke('unload_model');
+        await invoke('unload_description_model');
     }
 
     async processImage(imagePath: string, caption: boolean, labels: boolean, text: boolean): Promise<any> {
@@ -45,6 +42,23 @@ export class DescriptionModel {
         const result = await this.processImage(imagePath, false, false, true);
         const text = result['text'];
         return (Array.isArray(text) ? text : []);
+    }
+
+}
+
+export class EmbeddingsModel {
+
+    async load(): Promise<void> {
+        await invoke('load_embeddings_model');
+    }
+
+    async unload(): Promise<void> {
+        await invoke('unload_embeddings_model');
+    }
+
+    async generateEmbedding(text: string): Promise<number[]> {
+        const result = (await invoke<string>('generate_embedding', { text }));
+        return JSON.parse(result);
     }
 
 }

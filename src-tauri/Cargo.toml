@@ -27,13 +27,6 @@ tokio-tungstenite = "0.30.0"
 local-ip-address = "0.6.13"
 # Database
 rusqlite = { version = "0.31", features = ["bundled"] }
-# Model inference
-candle-core = "0.8"
-candle-nn = "0.8"
-candle-transformers = "0.8"
-tokenizers = "0.20"
-image = "0.25"
-anyhow = "1.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-cli = "2"

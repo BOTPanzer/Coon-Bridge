@@ -2,7 +2,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import html from './index.html?raw';
-import { Album, DescriptionModel, Item, Util } from '../../util';
+import { Album, DescriptionModel, EmbeddingsModel, Item, Util } from '../../util';
 
 export class MetadataScreen extends BaseScreen {
 
@@ -207,7 +207,7 @@ export class MetadataScreen extends BaseScreen {
             //Look for its items without metadata
             for (const item of album.items) {
                 const itemMetadata = album.getItemMetadata(item.name);
-                if (itemMetadata && itemMetadata.caption && itemMetadata.labels && itemMetadata.text) {
+                if (itemMetadata && itemMetadata.caption && itemMetadata.labels && itemMetadata.text && itemMetadata.embedding) {
                     //Has metadata
                     this.itemsWithMetadataCount++;
                 } else {
@@ -231,7 +231,7 @@ export class MetadataScreen extends BaseScreen {
     private maxLogs: number = 1000;
     private logs: string[] = [];
 
-    private log(text: string) {
+    private log = (text: string) => {
         //Add log
         console.log(text);
         this.logs.add(text);
@@ -333,10 +333,11 @@ export class MetadataScreen extends BaseScreen {
     }
 
     private async generateMetadata() {
-        //Load model
+        //Create models
         const descriptionModel: DescriptionModel = new DescriptionModel();
-        this.log('Loading description model...');
-        await descriptionModel.load();
+        const embeddingsModel: EmbeddingsModel = new EmbeddingsModel();
+        let isDescriptionModelLoaded = false;
+        let isEmbeddingsModelLoaded = false;
 
         //Progress checks
         const progressTotal: number = this.itemsWithoutMetadataCount;
@@ -365,6 +366,19 @@ export class MetadataScreen extends BaseScreen {
                 let hasCaption: boolean = typeof itemMetadata.caption == 'string';
                 let hasLabels: boolean = Array.isArray(itemMetadata.labels);
                 let hasText: boolean = Array.isArray(itemMetadata.text);
+                let hasEmbeddings: boolean = Array.isArray(itemMetadata.embedding);
+
+                //Load description model
+                if ((!hasCaption || !hasLabels || !hasText) && !isDescriptionModelLoaded) {
+                    this.log('Loading description model...');
+                    try {
+                        await descriptionModel.load();
+                        isDescriptionModelLoaded = true;
+                    } catch (e) {
+                        this.log(`Error loading description model.`);
+                        return;
+                    }
+                }
 
                 //Generate caption
                 if (!hasCaption) {
@@ -385,6 +399,36 @@ export class MetadataScreen extends BaseScreen {
                     this.log('Detecting text...');
                     itemMetadata.text = await descriptionModel.generateText(item.path);
                     hasText = true;
+                }
+
+                //Load embeddings model
+                if (!hasEmbeddings && !isEmbeddingsModelLoaded) {
+                    this.log('Loading embeddings model...');
+                    try {
+                        await embeddingsModel.load();
+                        isEmbeddingsModelLoaded = true;
+                    } catch (e) {
+                        this.log(`Error loading embeddings model.`);
+                        return;
+                    }
+                }
+
+                //Generate embedding
+                if (!hasEmbeddings) {
+                    this.log('Generating embedding...');
+                    const captionStr = itemMetadata.caption ?? "";
+                    const labelsStr = (itemMetadata.labels ?? []).join(" ").trim();
+                    const textStr = (itemMetadata.text ?? []).join(" ").trim();
+                    const combinedText = `${captionStr} ${labelsStr} ${textStr}`.trim();
+                    console.log(combinedText);
+                    
+                    if (combinedText) {
+                        const embedding = await embeddingsModel.generateEmbedding(combinedText);
+                        if (embedding.length > 0) {
+                            itemMetadata.embedding = embedding;
+                            hasEmbeddings = true;
+                        }
+                    }
                 }
 
                 //Update metadata
