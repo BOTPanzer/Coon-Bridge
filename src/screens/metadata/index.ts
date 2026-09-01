@@ -20,6 +20,10 @@ export class MetadataScreen extends BaseScreen {
     elementClean!: HTMLButtonElement
     elementGenerate!: HTMLButtonElement
     elementLogs!: HTMLElement
+    elementStateCaptions!: HTMLInputElement
+    elementStateLabels!: HTMLInputElement
+    elementStateText!: HTMLInputElement
+    elementStateEmbeddings!: HTMLInputElement
 
     //Screen
     constructor(app: App) {
@@ -45,6 +49,10 @@ export class MetadataScreen extends BaseScreen {
         this.elementClean = document.getElementById('metadata-clean') as HTMLButtonElement;
         this.elementGenerate = document.getElementById('metadata-generate') as HTMLButtonElement;
         this.elementLogs = document.getElementById('metadata-logs')!;
+        this.elementStateCaptions = document.getElementById('metadata-state-captions') as HTMLInputElement;
+        this.elementStateLabels = document.getElementById('metadata-state-labels') as HTMLInputElement;
+        this.elementStateText = document.getElementById('metadata-state-text') as HTMLInputElement;
+        this.elementStateEmbeddings = document.getElementById('metadata-state-embeddings') as HTMLInputElement;
 
         //Assign back event
         this.elementBack.onclick = () => {
@@ -101,7 +109,7 @@ export class MetadataScreen extends BaseScreen {
             this.setWorking(true);
 
             //Clean metadata
-            this.cleanMetadata().then(() => {
+            this.cleanMetadata().finally(() => {
                 //Finish working
                 this.setWorking(false);
             });
@@ -116,10 +124,40 @@ export class MetadataScreen extends BaseScreen {
             this.setWorking(true);
 
             //Generate metadata
-            this.generateMetadata().then(() => {
+            this.generateMetadata().finally(() => {
                 //Finish working
                 this.setWorking(false);
             });
+        }
+
+        //Assign change desired types events
+        this.elementStateCaptions.checked = this.app.settings.metadataIgnoredTypes.captions;
+        this.elementStateLabels.checked = this.app.settings.metadataIgnoredTypes.labels;
+        this.elementStateText.checked = this.app.settings.metadataIgnoredTypes.text;
+        this.elementStateEmbeddings.checked = this.app.settings.metadataIgnoredTypes.embeddings;
+
+        this.elementStateCaptions.oninput = async () => {
+            this.app.settings.metadataIgnoredTypes.captions = this.elementStateCaptions.checked;
+            await this.app.saveSettings();
+            this.countItemsWithMetadata();
+        }
+
+        this.elementStateLabels.oninput = async () => {
+            this.app.settings.metadataIgnoredTypes.labels = this.elementStateLabels.checked;
+            await this.app.saveSettings();
+            this.countItemsWithMetadata();
+        }
+
+        this.elementStateText.oninput = async () => {
+            this.app.settings.metadataIgnoredTypes.text = this.elementStateText.checked;
+            await this.app.saveSettings();
+            this.countItemsWithMetadata();
+        }
+
+        this.elementStateEmbeddings.oninput = async () => {
+            this.app.settings.metadataIgnoredTypes.embeddings = this.elementStateEmbeddings.checked;
+            await this.app.saveSettings();
+            this.countItemsWithMetadata();
         }
     }
 
@@ -129,7 +167,7 @@ export class MetadataScreen extends BaseScreen {
         this.elementContent.setAttribute('hidden', '');
 
         //Load albums
-        this.loadAlbums().then(() => {
+        this.loadAlbums().finally(() => {
             //Finish loading
             this.setWorking(false);
             this.elementLoading.remove();
@@ -159,6 +197,10 @@ export class MetadataScreen extends BaseScreen {
         this.elementSearch.disabled = working;
         this.elementClean.disabled = working;
         this.elementGenerate.disabled = working;
+        this.elementStateCaptions.disabled = working;
+        this.elementStateLabels.disabled = working;
+        this.elementStateText.disabled = working;
+        this.elementStateEmbeddings.disabled = working;
     }
 
     //Albums
@@ -198,6 +240,12 @@ export class MetadataScreen extends BaseScreen {
         this.itemsWithoutMetadataCount = 0;
         this.itemsWithMetadataCount = 0;
 
+        //Get settings
+        const ignoreCaptions = this.app.settings.metadataIgnoredTypes.captions;
+        const ignoreLabels = this.app.settings.metadataIgnoredTypes.labels;
+        const ignoreText = this.app.settings.metadataIgnoredTypes.text;
+        const ignoreEmbeddings = this.app.settings.metadataIgnoredTypes.embeddings;
+
         //Check albums
         for (const album of this.albums) {
             //Create list of items without metadata in this album
@@ -207,7 +255,11 @@ export class MetadataScreen extends BaseScreen {
             //Look for its items without metadata
             for (const item of album.items) {
                 const itemMetadata = album.getItemMetadata(item.name);
-                if (itemMetadata && itemMetadata.caption && itemMetadata.labels && itemMetadata.text && itemMetadata.embedding) {
+                if (itemMetadata && 
+                    (ignoreCaptions || itemMetadata.caption) && 
+                    (ignoreLabels || itemMetadata.labels) && 
+                    (ignoreText || itemMetadata.text) && 
+                    (ignoreEmbeddings || itemMetadata.embedding)) {
                     //Has metadata
                     this.itemsWithMetadataCount++;
                 } else {
@@ -333,6 +385,12 @@ export class MetadataScreen extends BaseScreen {
     }
 
     private async generateMetadata() {
+        //No metadata needs being generated
+        if (this.itemsWithoutMetadataCount <= 0) {
+            this.log(`There is no metadata to generate.`);
+            return;
+        }
+
         //Create models
         const descriptionModel: DescriptionModel = new DescriptionModel();
         const embeddingsModel: EmbeddingsModel = new EmbeddingsModel();
@@ -341,7 +399,14 @@ export class MetadataScreen extends BaseScreen {
 
         //Progress checks
         const progressTotal: number = this.itemsWithoutMetadataCount;
+        let itemsProcessedTotalCount: number = 0;
         let itemsFixedTotalCount: number = 0;
+
+        //Get settings
+        const ignoreCaptions = this.app.settings.metadataIgnoredTypes.captions;
+        const ignoreLabels = this.app.settings.metadataIgnoredTypes.labels;
+        const ignoreText = this.app.settings.metadataIgnoredTypes.text;
+        const ignoreEmbeddings = this.app.settings.metadataIgnoredTypes.embeddings;
 
         //Fix items
         for (const [albumIndex, itemsWithoutMetadata] of this.itemsWithoutMetadata.entries()) {
@@ -358,18 +423,19 @@ export class MetadataScreen extends BaseScreen {
                 //Get item info
                 const item = itemsWithoutMetadata[i];
                 const progressCurrent = itemsFixedTotalCount + 1;
-                const progressCurrentPercentage = Util.round(itemsFixedTotalCount / progressTotal * 100, 2);
+                const progressCurrentPercentage = Util.round(itemsProcessedTotalCount / progressTotal * 100, 2);
+                itemsProcessedTotalCount++;
                 this.log(`- ${item.name} (${progressCurrent}/${progressTotal}, ${progressCurrentPercentage}%)`);
 
                 //Get metadata info
                 const itemMetadata = item.getMetadata();
-                let hasCaption: boolean = typeof itemMetadata.caption == 'string';
-                let hasLabels: boolean = Array.isArray(itemMetadata.labels);
-                let hasText: boolean = Array.isArray(itemMetadata.text);
-                let hasEmbeddings: boolean = Array.isArray(itemMetadata.embedding);
+                let generateCaption: boolean = (!ignoreCaptions && typeof itemMetadata.caption != 'string');
+                let generateLabels: boolean = (!ignoreLabels && !Array.isArray(itemMetadata.labels));
+                let generateText: boolean = (!ignoreText && !Array.isArray(itemMetadata.text));
+                let generateEmbeddings: boolean = (!ignoreEmbeddings && !Array.isArray(itemMetadata.embedding));
 
                 //Load description model
-                if ((!hasCaption || !hasLabels || !hasText) && !isDescriptionModelLoaded) {
+                if ((generateCaption || generateLabels || generateText) && !isDescriptionModelLoaded) {
                     this.log('Loading description model...');
                     try {
                         await descriptionModel.load();
@@ -381,28 +447,28 @@ export class MetadataScreen extends BaseScreen {
                 }
 
                 //Generate caption
-                if (!hasCaption) {
+                if (generateCaption) {
                     this.log('Generating caption...');
                     itemMetadata.caption = await descriptionModel.generateCaption(item.path);
-                    hasCaption = true;
+                    generateCaption = false;
                 }
 
                 //Generate labels
-                if (!hasLabels) {
+                if (generateLabels) {
                     this.log('Generating labels...');
                     itemMetadata.labels = await descriptionModel.generateLabels(item.path);
-                    hasLabels = true;
+                    generateLabels = false;
                 }
 
                 //Generate text
-                if (!hasText) {
+                if (generateText) {
                     this.log('Detecting text...');
                     itemMetadata.text = await descriptionModel.generateText(item.path);
-                    hasText = true;
+                    generateText = false;
                 }
 
                 //Load embeddings model
-                if (!hasEmbeddings && !isEmbeddingsModelLoaded) {
+                if (generateEmbeddings && !isEmbeddingsModelLoaded) {
                     this.log('Loading embeddings model...');
                     try {
                         await embeddingsModel.load();
@@ -414,20 +480,25 @@ export class MetadataScreen extends BaseScreen {
                 }
 
                 //Generate embedding
-                if (!hasEmbeddings) {
-                    this.log('Generating embedding...');
-                    const captionStr = itemMetadata.caption ?? "";
-                    const labelsStr = (itemMetadata.labels ?? []).join(" ").trim();
-                    const textStr = (itemMetadata.text ?? []).join(" ").trim();
-                    const combinedText = `${captionStr} ${labelsStr} ${textStr}`.trim();
-                    console.log(combinedText);
-                    
-                    if (combinedText) {
+                if (generateEmbeddings) {
+                    //Prepare generation
+                    const caption = itemMetadata.caption ?? "";
+                    const labels = (itemMetadata.labels ?? []).join(" ").trim();
+                    const text = (itemMetadata.text ?? []).join(" ").trim();
+                    const combinedText = `${caption} ${labels} ${text}`.trim();
+            
+                    //Check if valid
+                    if (combinedText.length > 0) {
+                        //Valid -> Generate embedding
+                        this.log('Generating embedding...');
                         const embedding = await embeddingsModel.generateEmbedding(combinedText);
                         if (embedding.length > 0) {
                             itemMetadata.embedding = embedding;
-                            hasEmbeddings = true;
+                            generateEmbeddings = false;
                         }
+                    } else {
+                        //Invalid -> Show error
+                        this.log('Embedding generation requires generating a caption, labels or text first.');
                     }
                 }
 
@@ -435,7 +506,7 @@ export class MetadataScreen extends BaseScreen {
                 album.setItemMetadata(item.name, itemMetadata);
 
                 //Check if fixed
-                if (!hasCaption || !hasLabels || !hasText) continue;
+                if (generateCaption || generateLabels || generateText || generateEmbeddings) continue;
 
                 //Mark as fixed
                 itemsWithoutMetadata.removeAt(i);
@@ -457,7 +528,7 @@ export class MetadataScreen extends BaseScreen {
             album.cleanMetadata();
             await album.saveMetadata(!wasAlbumSaved);
         }
-        this.log(`Finished fixing metadata.`);
+        this.log(`Finished generating metadata (fixed ${itemsFixedTotalCount}/${progressTotal} items).`);
 
         //Unload model
         await descriptionModel.unload();

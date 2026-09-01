@@ -667,3 +667,58 @@ h2 {
     /* Appearence */
     font-family: var(--headerFont);
 }
+
+
+
+  /*$$$$$    /$$     /$$
+ /$$__  $$  | $$    | $$
+| $$  \ $$ /$$$$$$  | $$$$$$$   /$$$$$$   /$$$$$$
+| $$  | $$|_  $$_/  | $$__  $$ /$$__  $$ /$$__  $$
+| $$  | $$  | $$    | $$  \ $$| $$$$$$$$| $$  \__/
+| $$  | $$  | $$ /$$| $$  | $$| $$_____/| $$
+|  $$$$$$/  |  $$$$/| $$  | $$|  $$$$$$$| $$
+ \______/    \___/  |__/  |__/ \_______/|_*/
+
+/* Floating status menu */
+.floating-status {
+    /* Size */
+    padding: 20px;
+
+    /* Layout */
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    /* Appearence */
+    background-color: var(--surface);
+    color: var(--onSurface);
+    border-radius: 20px;
+}
+
+.floating-status > span {
+    /* Layout */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+status-dot {
+    /* Size */
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+
+    /* Appearence */
+    border-radius: 10px;
+    background-color: rgb(230, 27, 27);
+}
+
+status-dot[active] {
+    /* Appearence */
+    background-color: rgb(18, 184, 18);
+}
