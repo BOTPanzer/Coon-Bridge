@@ -20,10 +20,6 @@ export class MetadataScreen extends BaseScreen {
     elementClean!: HTMLButtonElement
     elementGenerate!: HTMLButtonElement
     elementLogs!: HTMLElement
-    elementStateCaptions!: HTMLInputElement
-    elementStateLabels!: HTMLInputElement
-    elementStateText!: HTMLInputElement
-    elementStateEmbeddings!: HTMLInputElement
 
     //Screen
     constructor(app: App) {
@@ -49,10 +45,6 @@ export class MetadataScreen extends BaseScreen {
         this.elementClean = document.getElementById('metadata-clean') as HTMLButtonElement;
         this.elementGenerate = document.getElementById('metadata-generate') as HTMLButtonElement;
         this.elementLogs = document.getElementById('metadata-logs')!;
-        this.elementStateCaptions = document.getElementById('metadata-state-captions') as HTMLInputElement;
-        this.elementStateLabels = document.getElementById('metadata-state-labels') as HTMLInputElement;
-        this.elementStateText = document.getElementById('metadata-state-text') as HTMLInputElement;
-        this.elementStateEmbeddings = document.getElementById('metadata-state-embeddings') as HTMLInputElement;
 
         //Assign back event
         this.elementBack.onclick = () => {
@@ -129,36 +121,6 @@ export class MetadataScreen extends BaseScreen {
                 this.setWorking(false);
             });
         }
-
-        //Assign change desired types events
-        this.elementStateCaptions.checked = this.app.settings.metadataIgnoredTypes.captions;
-        this.elementStateLabels.checked = this.app.settings.metadataIgnoredTypes.labels;
-        this.elementStateText.checked = this.app.settings.metadataIgnoredTypes.text;
-        this.elementStateEmbeddings.checked = this.app.settings.metadataIgnoredTypes.embeddings;
-
-        this.elementStateCaptions.oninput = async () => {
-            this.app.settings.metadataIgnoredTypes.captions = this.elementStateCaptions.checked;
-            await this.app.saveSettings();
-            this.countItemsWithMetadata();
-        }
-
-        this.elementStateLabels.oninput = async () => {
-            this.app.settings.metadataIgnoredTypes.labels = this.elementStateLabels.checked;
-            await this.app.saveSettings();
-            this.countItemsWithMetadata();
-        }
-
-        this.elementStateText.oninput = async () => {
-            this.app.settings.metadataIgnoredTypes.text = this.elementStateText.checked;
-            await this.app.saveSettings();
-            this.countItemsWithMetadata();
-        }
-
-        this.elementStateEmbeddings.oninput = async () => {
-            this.app.settings.metadataIgnoredTypes.embeddings = this.elementStateEmbeddings.checked;
-            await this.app.saveSettings();
-            this.countItemsWithMetadata();
-        }
     }
 
     protected onOpen(): void {
@@ -197,10 +159,6 @@ export class MetadataScreen extends BaseScreen {
         this.elementSearch.disabled = working;
         this.elementClean.disabled = working;
         this.elementGenerate.disabled = working;
-        this.elementStateCaptions.disabled = working;
-        this.elementStateLabels.disabled = working;
-        this.elementStateText.disabled = working;
-        this.elementStateEmbeddings.disabled = working;
     }
 
     //Albums

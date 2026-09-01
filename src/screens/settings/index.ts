@@ -6,6 +6,10 @@ import html from './index.html?raw';
 export class SettingsScreen extends BaseScreen {
 
     //Elements
+    elementMetadataIgnoreCaptions!: HTMLInputElement
+    elementMetadataIgnoreLabels!: HTMLInputElement
+    elementMetadataIgnoreText!: HTMLInputElement
+    elementMetadataIgnoreEmbeddings!: HTMLInputElement
     elementSyncIgnoreDeletedItemsSwitch!: HTMLInputElement
     elementLinksEmpty!: HTMLElement
     elementLinksList!: HTMLElement
@@ -22,6 +26,10 @@ export class SettingsScreen extends BaseScreen {
     //State
     protected onRendered(): void {
         //Get elements
+        this.elementMetadataIgnoreCaptions = document.getElementById('settings-metadataIgnoreCaptions') as HTMLInputElement;
+        this.elementMetadataIgnoreLabels = document.getElementById('settings-metadataIgnoreLabels') as HTMLInputElement;
+        this.elementMetadataIgnoreText = document.getElementById('settings-metadataIgnoreText') as HTMLInputElement;
+        this.elementMetadataIgnoreEmbeddings = document.getElementById('settings-metadataIgnoreEmbeddings') as HTMLInputElement;
         this.elementSyncIgnoreDeletedItemsSwitch = document.getElementById('settings-syncIgnoreDeletedItems') as HTMLInputElement;
         this.elementLinksEmpty = document.getElementById('settings-links-empty')!;
         this.elementLinksList = document.getElementById('settings-links-list')!;
@@ -36,7 +44,33 @@ export class SettingsScreen extends BaseScreen {
             app.open(app.homeScreen);
         }
 
-        //Sync
+        //Metadata screen
+        this.elementMetadataIgnoreCaptions.checked = this.app.settings.metadataIgnoredTypes.captions;
+        this.elementMetadataIgnoreLabels.checked = this.app.settings.metadataIgnoredTypes.labels;
+        this.elementMetadataIgnoreText.checked = this.app.settings.metadataIgnoredTypes.text;
+        this.elementMetadataIgnoreEmbeddings.checked = this.app.settings.metadataIgnoredTypes.embeddings;
+
+        this.elementMetadataIgnoreCaptions.oninput = async () => {
+            this.app.settings.metadataIgnoredTypes.captions = this.elementMetadataIgnoreCaptions.checked;
+            await this.app.saveSettings();
+        }
+
+        this.elementMetadataIgnoreLabels.oninput = async () => {
+            this.app.settings.metadataIgnoredTypes.labels = this.elementMetadataIgnoreLabels.checked;
+            await this.app.saveSettings();
+        }
+
+        this.elementMetadataIgnoreText.oninput = async () => {
+            this.app.settings.metadataIgnoredTypes.text = this.elementMetadataIgnoreText.checked;
+            await this.app.saveSettings();
+        }
+
+        this.elementMetadataIgnoreEmbeddings.oninput = async () => {
+            this.app.settings.metadataIgnoredTypes.embeddings = this.elementMetadataIgnoreEmbeddings.checked;
+            await this.app.saveSettings();
+        }
+
+        //Sync screen
         this.elementSyncIgnoreDeletedItemsSwitch.checked = app.settings.syncIgnoreDeletedItems;
         this.elementSyncIgnoreDeletedItemsSwitch.oninput = async () => {
             app.settings.syncIgnoreDeletedItems = this.elementSyncIgnoreDeletedItemsSwitch.checked;

@@ -15,22 +15,64 @@
         <div class="item">
             <div class="item-text">
                 <div class="item-title">Start with Windows</div>
-                <div class="item-description">Load the app in the background when Windows starts.</div>
+                <div class="item-description">Start the app in the background when Windows loads.</div>
             </div>
             <input type="checkbox" disabled>
+        </div>
+    </div>
+
+    <!-- Metadata -->
+    <div class="page-vc">
+        <!-- Title -->
+        <h2>Metadata screen</h2>
+
+        <!-- Ignore captions -->
+        <div class="item">
+            <div class="item-text">
+                <div class="item-title">Ignore captions in metadata</div>
+                <div class="item-description">Ignores captions when generating metadata or checking for items without it.</div>
+            </div>
+            <input id="settings-metadataIgnoreCaptions" type="checkbox">
+        </div>
+
+        <!-- Ignore labels -->
+        <div class="item">
+            <div class="item-text">
+                <div class="item-title">Ignore labels in metadata</div>
+                <div class="item-description">Ignores labels when generating metadata or checking for items without it.</div>
+            </div>
+            <input id="settings-metadataIgnoreLabels" type="checkbox">
+        </div>
+
+        <!-- Ignore text -->
+        <div class="item">
+            <div class="item-text">
+                <div class="item-title">Ignore text in metadata</div>
+                <div class="item-description">Ignores text when generating metadata or checking for items without it.</div>
+            </div>
+            <input id="settings-metadataIgnoreText" type="checkbox">
+        </div>
+
+        <!-- Ignore embeddings -->
+        <div class="item">
+            <div class="item-text">
+                <div class="item-title">Ignore embeddings in metadata</div>
+                <div class="item-description">Ignores embeddings when generating metadata or checking for items without it.</div>
+            </div>
+            <input id="settings-metadataIgnoreEmbeddings" type="checkbox">
         </div>
     </div>
 
     <!-- Sync -->
     <div class="page-vc">
         <!-- Title -->
-        <h2>Sync</h2>
+        <h2>Sync screen</h2>
 
         <!-- Ignore deleted phone items -->
         <div class="item">
             <div class="item-text">
                 <div class="item-title">Ignore deleted phone images</div>
-                <div class="item-description">Ignore deleted phone images when syncing albums. If not ignored, deleting an image in your phone will delete in your PC too.</div>
+                <div class="item-description">Ignore deleted phone images when syncing albums. If not ignored, deleted images in your phone will be deleted in your computer too.</div>
             </div>
             <input id="settings-syncIgnoreDeletedItems" type="checkbox">
         </div>
