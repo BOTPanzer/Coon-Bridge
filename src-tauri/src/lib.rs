@@ -37,6 +37,12 @@ pub fn run() {
                 let _ = window.set_focus();
             }
         }))
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                window.hide().unwrap();
+                api.prevent_close();
+            }
+        })
         //Tray
         .setup(|app| {
             let show_item = MenuItemBuilder::with_id("show", "Show").build(app)?;
@@ -63,12 +69,6 @@ pub fn run() {
                 .build(app)?;
             Ok(())
         })
-        .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                window.hide().unwrap();
-                api.prevent_close();
-            }
-        })
         //Custom API
         .invoke_handler(tauri::generate_handler![
             files::list_folder_items,
@@ -86,6 +86,7 @@ pub fn run() {
             metadata::load_embeddings_model,
             metadata::unload_embeddings_model,
             metadata::generate_embedding,
+            metadata::shutdown_metadata_server,
         ])
         .manage(Arc::new(server::ServerState::new()))
         .manage(Arc::new(metadata::MetadataState::new()))

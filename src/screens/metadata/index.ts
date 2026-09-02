@@ -2,7 +2,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import html from './index.html?raw';
-import { Album, DescriptionModel, EmbeddingsModel, Item, Util } from '../../util';
+import { Album, Item, MachineLearning, Util } from '../../util';
 
 export class MetadataScreen extends BaseScreen {
 
@@ -349,9 +349,7 @@ export class MetadataScreen extends BaseScreen {
             return;
         }
 
-        //Create models
-        const descriptionModel: DescriptionModel = new DescriptionModel();
-        const embeddingsModel: EmbeddingsModel = new EmbeddingsModel();
+        //Models info
         let isDescriptionModelLoaded = false;
         let isEmbeddingsModelLoaded = false;
 
@@ -396,10 +394,10 @@ export class MetadataScreen extends BaseScreen {
                 if ((generateCaption || generateLabels || generateText) && !isDescriptionModelLoaded) {
                     this.log('Loading description model...');
                     try {
-                        await descriptionModel.load();
+                        await MachineLearning.loadDescriptionModel();
                         isDescriptionModelLoaded = true;
                     } catch (e) {
-                        this.log(`Error loading description model.`);
+                        this.log(`Error loading description model: ${e}`);
                         return;
                     }
                 }
@@ -407,21 +405,21 @@ export class MetadataScreen extends BaseScreen {
                 //Generate caption
                 if (generateCaption) {
                     this.log('Generating caption...');
-                    itemMetadata.caption = await descriptionModel.generateCaption(item.path);
+                    itemMetadata.caption = await MachineLearning.generateCaption(item.path);
                     generateCaption = false;
                 }
 
                 //Generate labels
                 if (generateLabels) {
                     this.log('Generating labels...');
-                    itemMetadata.labels = await descriptionModel.generateLabels(item.path);
+                    itemMetadata.labels = await MachineLearning.generateLabels(item.path);
                     generateLabels = false;
                 }
 
                 //Generate text
                 if (generateText) {
                     this.log('Detecting text...');
-                    itemMetadata.text = await descriptionModel.generateText(item.path);
+                    itemMetadata.text = await MachineLearning.generateText(item.path);
                     generateText = false;
                 }
 
@@ -429,10 +427,10 @@ export class MetadataScreen extends BaseScreen {
                 if (generateEmbeddings && !isEmbeddingsModelLoaded) {
                     this.log('Loading embeddings model...');
                     try {
-                        await embeddingsModel.load();
+                        await MachineLearning.loadEmbeddingsModel();
                         isEmbeddingsModelLoaded = true;
                     } catch (e) {
-                        this.log(`Error loading embeddings model.`);
+                        this.log(`Error loading embeddings model: ${e}`);
                         return;
                     }
                 }
@@ -449,7 +447,7 @@ export class MetadataScreen extends BaseScreen {
                     if (combinedText.length > 0) {
                         //Valid -> Generate embedding
                         this.log('Generating embedding...');
-                        const embedding = await embeddingsModel.generateEmbedding(combinedText);
+                        const embedding = await MachineLearning.generateEmbedding(combinedText);
                         if (embedding.length > 0) {
                             itemMetadata.embedding = embedding;
                             generateEmbeddings = false;
@@ -488,8 +486,8 @@ export class MetadataScreen extends BaseScreen {
         }
         this.log(`Finished generating metadata (fixed ${itemsFixedTotalCount}/${progressTotal} items).`);
 
-        //Unload model
-        await descriptionModel.unload();
+        //Unload models
+        await MachineLearning.shutdownServer();
     }
 
 }

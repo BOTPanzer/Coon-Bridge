@@ -3,7 +3,15 @@ from PIL import ImageFile
 
 
 
-# Text util
+#  /$$   /$$   /$$     /$$ /$$
+# | $$  | $$  | $$    |__/| $$
+# | $$  | $$ /$$$$$$   /$$| $$
+# | $$  | $$|_  $$_/  | $$| $$
+# | $$  | $$  | $$    | $$| $$
+# | $$  | $$  | $$ /$$| $$| $$
+# |  $$$$$$/  |  $$$$/| $$| $$
+#  \______/    \___/  |__/|__/
+
 def sanitize_text(text: str):
     return text.encode('utf-8', 'ignore').decode('utf-8')
 
@@ -71,6 +79,11 @@ class DescriptionModel:
         # Unload model
         self.model = None
         self.processor = None
+
+        # Free image cache
+        global last_image_cache
+        last_image_cache["path"] = None
+        last_image_cache["data"] = None
 
         # Free memory
         gc.collect()
@@ -200,7 +213,6 @@ class EmbeddingsModel:
 # |  $$$$$$/|  $$$$$$$| $$         \  $/  |  $$$$$$$| $$
 #  \______/  \_______/|__/          \_/    \_______/|__/
 
-
 # Last image cache
 last_image_cache = {
     "path": None,
@@ -230,22 +242,22 @@ if __name__ == "__main__":
             # Check command
             match cmd:
                 # Load description model
-                case "load_description":
+                case "load_description_model":
                     description_model.load()
                     print(json.dumps({"status": "ok"}), flush=True)
 
                 # Unload description model
-                case "unload_description":
+                case "unload_description_model":
                     description_model.unload()
                     print(json.dumps({"status": "ok"}), flush=True)
 
                 # Load embeddings model
-                case "load_embeddings":
+                case "load_embeddings_model":
                     embeddings_model.load()
                     print(json.dumps({"status": "ok"}), flush=True)
 
                 # Unload embeddings model
-                case "unload_embeddings":
+                case "unload_embeddings_model":
                     embeddings_model.unload()
                     print(json.dumps({"status": "ok"}), flush=True)
 

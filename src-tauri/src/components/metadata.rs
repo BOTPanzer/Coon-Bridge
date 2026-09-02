@@ -4,8 +4,10 @@ use std::{
     sync::Arc,
 };
 use serde_json::json;
-use tauri::{State};
+use tauri::{State, Manager};
 use tokio::sync::Mutex;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 
 
 
@@ -24,15 +26,39 @@ pub struct MetadataWorker {
 }
 
 impl MetadataWorker {
-    pub fn new() -> Result<Self, String> {
+    pub fn new(app_handle: &tauri::AppHandle) -> Result<Self, String> {
+        //Resolve path to python server
+        let script_path = if cfg!(debug_assertions) {
+            //Testing -> Point directly to project root script
+            std::path::PathBuf::from("../src-python/metadata_server.py")
+        } else {
+            //Production -> Resolve bundled resource
+            app_handle
+                .path()
+                .resolve("python/metadata_server.py", tauri::path::BaseDirectory::Resource)
+                .map_err(|e| e.to_string())?
+        };
+
+        //Strip Windows UNC prefix (\\?\) so Python can open it
+        let script_path_str = script_path
+            .to_string_lossy()
+            .trim_start_matches(r"\\?\")
+            .to_string();
+
+        //Prepare python command
+        let mut cmd = Command::new("python");
+        cmd.arg("-u")
+           .arg(script_path_str)
+           .stdin(Stdio::piped())
+           .stdout(Stdio::piped())
+           .stderr(Stdio::inherit());
+
+        //Hide console window on Windows
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000);
+
         //Run python process
-        let mut process = Command::new("python")
-            .arg("../src-python/metadata_server.py")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
-            .spawn()
-            .map_err(|e| e.to_string())?;
+        let mut process = cmd.spawn().map_err(|e| e.to_string())?;
 
         //Wait for model to finish loading
         let stdout = process.stdout.as_mut().ok_or_else(|| "Failed to capture stdout".to_string())?;
@@ -41,6 +67,10 @@ impl MetadataWorker {
         reader.read_line(&mut line).map_err(|e| e.to_string())?;
 
         Ok(Self { process })
+    }
+
+    pub fn kill(&mut self) -> Result<(), String> {
+        self.process.kill().map_err(|e| e.to_string())
     }
 
     fn send(&mut self, payload: serde_json::Value) -> Result<serde_json::Value, String>{
@@ -71,7 +101,7 @@ impl MetadataWorker {
     pub fn load_description(&mut self) -> Result<(), String> {
         //Load model
         self.send(json!({
-            "command": "load_description"
+            "command": "load_description_model"
         }))?;
 
         //Finish
@@ -81,7 +111,7 @@ impl MetadataWorker {
     pub fn unload_description(&mut self) -> Result<(), String> {
         //Unload model
         self.send(json!({
-            "command": "unload_description"
+            "command": "unload_description_model"
         }))?;
 
         //Finish
@@ -106,7 +136,7 @@ impl MetadataWorker {
     pub fn load_embeddings(&mut self) -> Result<(), String> {
         //Load model
         self.send(json!({
-            "command": "load_embeddings"
+            "command": "load_embeddings_model"
         }))?;
 
         //Finish
@@ -116,7 +146,7 @@ impl MetadataWorker {
     pub fn unload_embeddings(&mut self) -> Result<(), String> {
         //Unload model
         self.send(json!({
-            "command": "unload_embeddings"
+            "command": "unload_embeddings_model"
         }))?;
 
         //Finish
@@ -137,68 +167,95 @@ impl MetadataWorker {
 
 //State
 pub struct MetadataState {
-    pub worker: Mutex<MetadataWorker>,
+    pub worker: Mutex<Option<MetadataWorker>>
 }
 
 impl MetadataState {
     pub fn new() -> Self {
         Self {
-            worker: Mutex::new(MetadataWorker::new().expect("Failed to start metadata worker")),
+            worker: Mutex::new(None)
         }
+    }
+
+    pub async fn get_worker_mut(&self, app_handle: &tauri::AppHandle) -> Result<tokio::sync::MutexGuard<'_, Option<MetadataWorker>>, String> {
+        let mut guard = self.worker.lock().await;
+        if guard.is_none() {
+            *guard = Some(MetadataWorker::new(app_handle)?);
+        }
+        Ok(guard)
     }
 }
 
 //Commands
 #[tauri::command]
-pub async fn load_description_model(state: State<'_, Arc<MetadataState>>) -> Result<(), String> {
+pub async fn load_description_model(app_handle: tauri::AppHandle, state: State<'_, Arc<MetadataState>>) -> Result<(), String> {
     //Get worker
-    let mut worker = state.worker.lock().await;
+    let mut guard = state.get_worker_mut(&app_handle).await?;
+    let worker = guard.as_mut().unwrap();
 
     //Load model
     worker.load_description().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn unload_description_model(state: State<'_, Arc<MetadataState>>) -> Result<(), String> {
+pub async fn unload_description_model(app_handle: tauri::AppHandle, state: State<'_, Arc<MetadataState>>) -> Result<(), String> {
     //Get worker
-    let mut worker = state.worker.lock().await;
+    let mut guard = state.get_worker_mut(&app_handle).await?;
+    let worker = guard.as_mut().unwrap();
 
     //Unload model
     worker.unload_description().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn process_image(state: State<'_, Arc<MetadataState>>, image_path: String, caption: bool, labels: bool, text: bool) -> Result<String, String> {
+pub async fn process_image(app_handle: tauri::AppHandle, state: State<'_, Arc<MetadataState>>, image_path: String, caption: bool, labels: bool, text: bool) -> Result<String, String> {
     //Get worker
-    let mut worker = state.worker.lock().await;
+    let mut guard = state.get_worker_mut(&app_handle).await?;
+    let worker = guard.as_mut().unwrap();
 
     //Process image
     worker.process_image(&image_path, &caption, &labels, &text).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn load_embeddings_model(state: State<'_, Arc<MetadataState>>) -> Result<(), String> {
+pub async fn load_embeddings_model(app_handle: tauri::AppHandle, state: State<'_, Arc<MetadataState>>) -> Result<(), String> {
     //Get worker
-    let mut worker = state.worker.lock().await;
+    let mut guard = state.get_worker_mut(&app_handle).await?;
+    let worker = guard.as_mut().unwrap();
 
     //Load model
     worker.load_embeddings().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn unload_embeddings_model(state: State<'_, Arc<MetadataState>>) -> Result<(), String> {
+pub async fn unload_embeddings_model(app_handle: tauri::AppHandle, state: State<'_, Arc<MetadataState>>) -> Result<(), String> {
     //Get worker
-    let mut worker = state.worker.lock().await;
+    let mut guard = state.get_worker_mut(&app_handle).await?;
+    let worker = guard.as_mut().unwrap();
 
     //Unload model
     worker.unload_embeddings().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn generate_embedding(state: State<'_, Arc<MetadataState>>, text: String) -> Result<String, String> {
+pub async fn generate_embedding(app_handle: tauri::AppHandle, state: State<'_, Arc<MetadataState>>, text: String) -> Result<String, String> {
     //Get worker
-    let mut worker = state.worker.lock().await;
+    let mut guard = state.get_worker_mut(&app_handle).await?;
+    let worker = guard.as_mut().unwrap();
 
     //Process image
     worker.generate_embedding(&text).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn shutdown_metadata_server(app_handle: tauri::AppHandle, state: State<'_, Arc<MetadataState>>) -> Result<(), String> {
+    //Get worker
+    let mut guard = state.get_worker_mut(&app_handle).await?;
+    if let Some(mut worker) = guard.take() {
+        //Kill python process
+        let _ = worker.kill();
+    }
+
+    //Finish
+    Ok(())
 }
