@@ -43,6 +43,11 @@ pub fn run() {
                 api.prevent_close();
             }
         })
+        //Start with OS
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::AppleScript,
+            Some(vec!["--hidden"]),
+        ))
         //Tray
         .setup(|app| {
             let show_item = MenuItemBuilder::with_id("show", "Show").build(app)?;

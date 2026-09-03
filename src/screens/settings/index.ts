@@ -1,4 +1,5 @@
 import { ask, open } from '@tauri-apps/plugin-dialog';
+import { enable, disable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import html from './index.html?raw';
@@ -6,6 +7,7 @@ import html from './index.html?raw';
 export class SettingsScreen extends BaseScreen {
 
     //Elements
+    elementStartWithOS!: HTMLInputElement
     elementMetadataIgnoreCaptions!: HTMLInputElement
     elementMetadataIgnoreLabels!: HTMLInputElement
     elementMetadataIgnoreText!: HTMLInputElement
@@ -21,11 +23,12 @@ export class SettingsScreen extends BaseScreen {
     }
 
     //Rendering
-    render(): string { return html; }
+    render(): string{ return html; }
 
     //State
     protected onRendered(): void {
         //Get elements
+        this.elementStartWithOS = document.getElementById('settings-appStartWithOS') as HTMLInputElement;
         this.elementMetadataIgnoreCaptions = document.getElementById('settings-metadataIgnoreCaptions') as HTMLInputElement;
         this.elementMetadataIgnoreLabels = document.getElementById('settings-metadataIgnoreLabels') as HTMLInputElement;
         this.elementMetadataIgnoreText = document.getElementById('settings-metadataIgnoreText') as HTMLInputElement;
@@ -42,6 +45,16 @@ export class SettingsScreen extends BaseScreen {
         document.getElementById('settings-back')!.onclick = () => {
             //Return home
             app.open(app.homeScreen);
+        }
+
+        //App
+        this.checkAutostart().then((autostart) => {
+            this.elementStartWithOS.disabled = false;
+            this.elementStartWithOS.checked = autostart;
+        })
+
+        this.elementStartWithOS.oninput = async () => {
+            await this.toggleAutostart(this.elementStartWithOS.checked);
         }
 
         //Metadata screen
@@ -81,7 +94,7 @@ export class SettingsScreen extends BaseScreen {
         this.initLinksList();
     }
 
-    protected onOpen(): void {}
+    protected onOpened(): void {}
 
     protected onClosed(): boolean {
         //Reset app state
@@ -89,8 +102,21 @@ export class SettingsScreen extends BaseScreen {
         return true;
     }
 
+    //Autostart
+    private async checkAutostart(): Promise<boolean> {
+        return await isEnabled();
+    }
+
+    private async toggleAutostart(enableBoot: boolean) {
+        if (enableBoot) {
+            await enable();
+        } else {
+            await disable();
+        }
+    }
+
     //Links
-    private initLinksList() {
+    private initLinksList(): void {
         //Empty elements list
         this.elementLinksList.innerHTML = '';
 
@@ -239,7 +265,7 @@ export class SettingsScreen extends BaseScreen {
         return element;
     }
 
-    private notifyLinksListChanged() {
+    private notifyLinksListChanged(): void {
         if (this.app.settings.links.length <= 0) {
             //No links
             this.elementLinksEmpty.style.display = '';

@@ -52,7 +52,7 @@ export class HomeScreen extends BaseScreen {
         }
     }
 
-    protected onOpen(): void {}
+    protected onOpened(): void {}
 
     protected onClosed(): boolean { return true; }
 

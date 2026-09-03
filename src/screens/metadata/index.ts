@@ -123,7 +123,7 @@ export class MetadataScreen extends BaseScreen {
         }
     }
 
-    protected onOpen(): void {
+    protected onOpened(): void {
         //Start loading
         this.setWorking(true);
         this.elementContent.setAttribute('hidden', '');

@@ -22,12 +22,12 @@ export abstract class BaseScreen {
     open() {
         this._state = ScreenState.Open;
         this.onRendered();
-        this.onOpen();
+        this.onOpened();
     }
 
     protected abstract onRendered(): void
 
-    protected abstract onOpen(): void
+    protected abstract onOpened(): void
 
     close(): boolean {
         this._state = ScreenState.Closed;

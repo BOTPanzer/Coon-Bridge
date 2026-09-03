@@ -13,6 +13,9 @@
         "core:window:allow-close",
         "core:window:allow-destroy",
         "cli:allow-cli-matches",
+        "autostart:allow-is-enabled",
+        "autostart:allow-enable",
+        "autostart:allow-disable",
         "dialog:default",
         {
             "identifier": "fs:default",

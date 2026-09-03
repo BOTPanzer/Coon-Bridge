@@ -20,6 +20,7 @@ serde_json = "1"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-single-instance = "2.0.0"
+tauri-plugin-autostart = "2.0.0"
 futures-util = "0.3.33"
 # Server
 tokio = "1.53.1"

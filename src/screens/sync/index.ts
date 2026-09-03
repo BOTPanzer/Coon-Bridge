@@ -99,7 +99,7 @@ export class SyncScreen extends BaseScreen {
         }
     }
 
-    protected onOpen(): void {
+    protected onOpened(): void {
         //Register events
         this.bridge.registerEvents(this.log, this.onServerStateChanged, this.onConnectionStateChanged, null);
 
