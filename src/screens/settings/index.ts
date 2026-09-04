@@ -2,6 +2,7 @@ import { ask, open } from '@tauri-apps/plugin-dialog';
 import { enable, disable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
+import { Files, Link } from '../../util';
 import html from './index.html?raw';
 
 export class SettingsScreen extends BaseScreen {
@@ -116,6 +117,15 @@ export class SettingsScreen extends BaseScreen {
     }
 
     //Links
+    private getLinkName(link: Link, index: number): string {
+        //Check if album exists
+        const album = link.albumFolder;
+        const name = Files.getName(album);
+
+        //Create name
+        return (name ? `Link #${index}: ${name}` : `Link #${index}`)
+    }
+
     private initLinksList(): void {
         //Empty elements list
         this.elementLinksList.innerHTML = '';
@@ -159,7 +169,7 @@ export class SettingsScreen extends BaseScreen {
         const element = document.createElement('div');
         element.classList.add('link');
         element.innerHTML = `
-            <span id="link-name">Link ${index}</span>
+            <span id="link-name">${this.getLinkName(link, index)}</span>
             <div>
                 <button id="link-remove" icon>🗑️</button>
                 <div>
@@ -186,11 +196,11 @@ export class SettingsScreen extends BaseScreen {
         remove.onclick = async () => {
             //Ask for confirmation
             const confirm = await ask(
-                `Are you sure you want to remove link ${app.settings.links.indexOf(link)}?`, 
+                `Are you sure you want to delete link #${app.settings.links.indexOf(link)}?`, 
                 {
                     title: 'Coon Bridge',
                     kind: 'warning',
-                    okLabel: 'Remove',
+                    okLabel: 'Delete',
                     cancelLabel: 'Cancel'
                 }
             )
@@ -205,7 +215,8 @@ export class SettingsScreen extends BaseScreen {
             //Update link names
             const linkElements = this.elementLinksList.querySelectorAll('.link');
             for (const [index, element] of linkElements.entries()) {
-                element.querySelector('#link-name')!.innerHTML = `Link ${index}`
+                const link = app.settings.links[index];
+                element.querySelector('#link-name')!.innerHTML = this.getLinkName(link, index)
             }
 
             //Nofify list changed
@@ -235,6 +246,11 @@ export class SettingsScreen extends BaseScreen {
             //Update album folder
             link.albumFolder = albumInput.value;
             await app.saveSettings();
+
+            //Update album name
+            const index = app.settings.links.indexOf(link);
+            const linkElements = this.elementLinksList.querySelectorAll('.link');
+            linkElements[index].querySelector('#link-name')!.innerHTML = this.getLinkName(link, index)
         }
 
         metadataSelect.onclick = async () => {

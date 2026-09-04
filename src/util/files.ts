@@ -97,6 +97,10 @@ export class Files {
         await mkdir(path, { recursive: true });
     }
 
+    static getName(path: string): string | null {
+        return path.split(/[/\\]/).filter(Boolean).pop() || null;
+    }
+
     static async getLastModified(path: string): Promise<number> {
         return (await stat(path)).mtime!.getTime();
     }
