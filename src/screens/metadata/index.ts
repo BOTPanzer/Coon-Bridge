@@ -394,10 +394,15 @@ export class MetadataScreen extends BaseScreen {
                 if ((generateCaption || generateLabels || generateText) && !isDescriptionModelLoaded) {
                     this.log('Loading description model...');
                     try {
+                        //Load model
                         await MachineLearning.loadDescriptionModel();
                         isDescriptionModelLoaded = true;
                     } catch (e) {
+                        //Show error
                         this.log(`Error loading description model: ${e}`);
+
+                        //Unload models & stop
+                        await MachineLearning.shutdownServer();
                         return;
                     }
                 }
@@ -405,32 +410,67 @@ export class MetadataScreen extends BaseScreen {
                 //Generate caption
                 if (generateCaption) {
                     this.log('Generating caption...');
-                    itemMetadata.caption = await MachineLearning.generateCaption(item.path);
-                    generateCaption = false;
+                    try {
+                        //Generate caption
+                        itemMetadata.caption = await MachineLearning.generateCaption(item.path);
+                        generateCaption = false;
+                    } catch (e) {
+                        //Show error
+                        this.log(`Error generating caption: ${e}`);
+
+                        //Unload models & stop
+                        await MachineLearning.shutdownServer();
+                        return;
+                    }
                 }
 
                 //Generate labels
                 if (generateLabels) {
                     this.log('Generating labels...');
-                    itemMetadata.labels = await MachineLearning.generateLabels(item.path);
-                    generateLabels = false;
+                    try {
+                        //Generate labels
+                        itemMetadata.labels = await MachineLearning.generateLabels(item.path);
+                        generateLabels = false;
+                    } catch (e) {
+                        //Show error
+                        this.log(`Error generating labels: ${e}`);
+
+                        //Unload models & stop
+                        await MachineLearning.shutdownServer();
+                        return;
+                    }
                 }
 
                 //Generate text
                 if (generateText) {
                     this.log('Detecting text...');
-                    itemMetadata.text = await MachineLearning.generateText(item.path);
-                    generateText = false;
+                    try {
+                        //Detect text
+                        itemMetadata.text = await MachineLearning.generateText(item.path);
+                        generateText = false;
+                    } catch (e) {
+                        //Show error
+                        this.log(`Error detecting text: ${e}`);
+
+                        //Unload models & stop
+                        await MachineLearning.shutdownServer();
+                        return;
+                    }
                 }
 
                 //Load embeddings model
                 if (generateEmbeddings && !isEmbeddingsModelLoaded) {
                     this.log('Loading embeddings model...');
                     try {
+                        //Load model
                         await MachineLearning.loadEmbeddingsModel();
                         isEmbeddingsModelLoaded = true;
                     } catch (e) {
+                        //Show error
                         this.log(`Error loading embeddings model: ${e}`);
+
+                        //Unload models & stop
+                        await MachineLearning.shutdownServer();
                         return;
                     }
                 }
@@ -447,10 +487,20 @@ export class MetadataScreen extends BaseScreen {
                     if (combinedText.length > 0) {
                         //Valid -> Generate embedding
                         this.log('Generating embedding...');
-                        const embedding = await MachineLearning.generateEmbedding(combinedText);
-                        if (embedding.length > 0) {
-                            itemMetadata.embedding = embedding;
-                            generateEmbeddings = false;
+                        try {
+                            //Generate embedding
+                            const embedding = await MachineLearning.generateEmbedding(combinedText);
+                            if (embedding.length > 0) {
+                                itemMetadata.embedding = embedding;
+                                generateEmbeddings = false;
+                            }
+                        } catch (e) {
+                            //Show error
+                            this.log(`Error generating embedding: ${e}`);
+
+                            //Unload models & stop
+                            await MachineLearning.shutdownServer();
+                            return;
                         }
                     } else {
                         //Invalid -> Show error

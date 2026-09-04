@@ -21,50 +21,68 @@ Choose a version from the [releases page](https://github.com/BOTPanzer/Coon-Brid
 
 This app needs Python installed for metadata generation to work. It was tested using **Python 3.13.11**, tho other versions may work:
 
-1. **Installing dependencies**
+1. **Setting up a Python environment**
 
-   You can install them by running:
+    To create a virtual environment, navigate to the `python/` folder in your app installation directory and run:
 
-   `pip install name==version`
+    - `python -m venv .venv`
 
-   Using other versions may work but these are the ones used while developing the app:
+    This will create a local `.venv` folder containing a dedicated Python install to isolate all app dependencies.
 
-   - transformers (4.53.3)
-   - [pytorch](https://pytorch.org/get-started/locally/) (2.9.1, select the best option for your gpu)
-   - einops (0.8.1)
-   - timm (1.0.24)
+    *Note: If the virtual environment is missing, your global Python installation will be used instead.*
 
-2. **Downloading the models**
+2. **Installing dependencies**
 
-   The app uses:
+    To install the dependencies, first enable the virtual environment by running:
 
-   - `Florence2` for generating captions, labels and detecting text.
+    - `.venv\Scripts\activate.bat`
 
-   - `Paraphrase multilingual MiniLM L12 v2` for generating embeddings.
+    inside your terminal, then use:
 
-   You can download them manually from their respective hugging face repos:
+    - `pip install name==version`
 
-   - [Florence2](https://huggingface.co/microsoft/Florence-2-large/tree/main)
+    to install all required packages:
 
-   - [Paraphrase multilingual MiniLM L12 v2](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/tree/main)
+    - **transformers** (4.53.3)
+    - **[pytorch](https://pytorch.org/get-started/locally/)** (2.9.1, select the best option for your GPU setup)
+    - **einops** (0.8.1)
+    - **timm** (1.0.24)
 
-3. **Move the model**
+    *Note: Using other versions may work, but these are the ones used while developing the app:*
 
-   Create a `./python/models/` folder and move the model files inside. It should look like this:
+3. **Downloading the models**
 
-   ```
-   Coon-Bridge/
-   ├─ python/
-   ├─── models/
-   ├───── florence2/
-   ├─────── model.safetensors
-   ├─────── tokenizer.json
-   ├─────── ...
-   ├───── paraphrase-multilingual-MiniLM-L12-v2/
-   ├─────── model.safetensors
-   ├─────── tokenizer.json
-   └─────── ...
-   ```
+    Metadata generation relies on two AI models:
+
+    - `Florence2` for generating captions, labels and detecting text.
+    - `Paraphrase multilingual MiniLM L12 v2` for generating embeddings.
+
+    You can download them manually from their respective Hugging Face repositories:
+
+    - [Florence2](https://huggingface.co/microsoft/Florence-2-large/tree/main)
+    - [Paraphrase multilingual MiniLM L12 v2](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/tree/main)
+
+4. **Placing the models**
+
+    Create a `python/models/` folder inside the app install location and place the model files inside. 
+
+    It should look like this:
+
+    ```
+    Coon-Bridge/
+    ├─ python/
+    ├─── .venv/
+    ├───── ...
+    ├─── models/
+    ├───── florence2/
+    ├─────── model.safetensors
+    ├─────── tokenizer.json
+    ├─────── ...
+    ├───── paraphrase-multilingual-MiniLM-L12-v2/
+    ├─────── model.safetensors
+    ├─────── tokenizer.json
+    └─────── ...
+    ```
 
 ## How to use
 
@@ -98,13 +116,13 @@ Here is where you can search and generate information about your images. There a
 
 - **Generate metadata:** generates metadata for all images that don't have it: 
 
-  - A description about the image.
+    - A description about the image.
 
-  - A list of labels for things in the image.
+    - A list of labels for things in the image.
 
-  - A list of text detected in the image.
+    - A list of text detected in the image.
 
-  - An embedding vector to enable "natural language" search in the android app.
+    - An embedding vector to enable "natural language" search in the android app.
 
 ![Metadata screen](https://raw.githubusercontent.com/BOTPanzer/Coon-Bridge/refs/heads/main/screenshots/metadata.png)
 

@@ -29,7 +29,7 @@ impl MetadataWorker {
     pub fn new(app_handle: &tauri::AppHandle) -> Result<Self, String> {
         //Resolve path to python server
         let script_path = if cfg!(debug_assertions) {
-            //Testing -> Point directly to project root script
+            //Testing -> Project root
             std::path::PathBuf::from("../src-python/metadata_server.py")
         } else {
             //Production -> Resolve bundled resource
@@ -39,16 +39,26 @@ impl MetadataWorker {
                 .map_err(|e| e.to_string())?
         };
 
-        //Strip Windows UNC prefix (\\?\) so Python can open it
-        let script_path_str = script_path
-            .to_string_lossy()
-            .trim_start_matches(r"\\?\")
-            .to_string();
+        //Resolve path to python excutable
+        let python_path = if cfg!(debug_assertions) {
+            //Testing -> Project root
+            std::path::PathBuf::from("../src-python/.venv/Scripts/python.exe")
+        } else {
+            //Production -> Resolve bundled resource
+            app_handle
+                .path()
+                .resolve("python/.venv/Scripts/python.exe", tauri::path::BaseDirectory::Resource)
+                .map_err(|e| e.to_string())?
+        };
 
         //Prepare python command
-        let mut cmd = Command::new("python");
+        let mut cmd = Command::new(if python_path.exists() {
+            strip_unc_prefix(&python_path)
+        } else {
+            "python".to_string()
+        });
         cmd.arg("-u")
-           .arg(script_path_str)
+           .arg(strip_unc_prefix(&script_path))
            .stdin(Stdio::piped())
            .stdout(Stdio::piped())
            .stderr(Stdio::inherit());
@@ -258,4 +268,11 @@ pub async fn shutdown_metadata_server(app_handle: tauri::AppHandle, state: State
 
     //Finish
     Ok(())
+}
+
+//Util
+fn strip_unc_prefix(path: &std::path::Path) -> String {
+    path.to_string_lossy()
+        .trim_start_matches(r"\\?\")
+        .to_string()
 }

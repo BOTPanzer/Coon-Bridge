@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 # Machine learning models
+src-python/.venv/*
 src-python/models/*
