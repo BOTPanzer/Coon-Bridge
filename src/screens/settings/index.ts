@@ -224,6 +224,11 @@ export class SettingsScreen extends BaseScreen {
         }
     }
 
+    private getLinkName = (link: Link, index: number): string => {
+        const name = Files.getName(link.albumFolder);
+        return (name ? `Link #${index}: ${name}` : `Link #${index}`);
+    }
+
     private onCreateLinkElement = (_: Link): HTMLElement => {
         //Create element
         const element = document.createElement('div');
@@ -269,9 +274,7 @@ export class SettingsScreen extends BaseScreen {
         }
 
         //Update info
-        const name = Files.getName(link.albumFolder);
-
-        holder.name.innerText = (name ? `Link #${index}: ${name}` : `Link #${index}`);
+        holder.name.innerText = this.getLinkName(link, index);
         holder.albumInput.value = link.albumFolder;
         holder.metadataInput.value = link.metadataFile;
 
@@ -299,7 +302,7 @@ export class SettingsScreen extends BaseScreen {
             await app.saveSettings();
 
             //Update album name
-            this.linksAdapter.notifyItemChanged(index);
+            holder.name.innerText = this.getLinkName(link, index);
         }
 
         holder.metadataSelect.onclick = async () => {
