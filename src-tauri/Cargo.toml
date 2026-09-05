@@ -15,12 +15,12 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
 tauri-plugin-opener = "2"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-single-instance = "2.0.0"
 tauri-plugin-autostart = "2.0.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 futures-util = "0.3.33"
 # Server
 tokio = "1.53.1"

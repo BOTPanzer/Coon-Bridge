@@ -1,5 +1,6 @@
-import { ask, open } from '@tauri-apps/plugin-dialog';
+import { ask, open, save } from '@tauri-apps/plugin-dialog';
 import { enable, disable, isEnabled } from '@tauri-apps/plugin-autostart';
+import { invoke } from '@tauri-apps/api/core';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import { Files, Link } from '../../util';
@@ -14,6 +15,7 @@ export class SettingsScreen extends BaseScreen {
     elementMetadataIgnoreText!: HTMLInputElement
     elementMetadataIgnoreEmbeddings!: HTMLInputElement
     elementSyncIgnoreDeletedItemsSwitch!: HTMLInputElement
+    elementMetadataPort!: HTMLElement
     elementLinksEmpty!: HTMLElement
     elementLinksList!: HTMLElement
     elementLinksAdd!: HTMLElement
@@ -35,6 +37,7 @@ export class SettingsScreen extends BaseScreen {
         this.elementMetadataIgnoreText = document.getElementById('settings-metadataIgnoreText') as HTMLInputElement;
         this.elementMetadataIgnoreEmbeddings = document.getElementById('settings-metadataIgnoreEmbeddings') as HTMLInputElement;
         this.elementSyncIgnoreDeletedItemsSwitch = document.getElementById('settings-syncIgnoreDeletedItems') as HTMLInputElement;
+        this.elementMetadataPort = document.getElementById('settings-metadataPort')!
         this.elementLinksEmpty = document.getElementById('settings-links-empty')!;
         this.elementLinksList = document.getElementById('settings-links-list')!;
         this.elementLinksAdd = document.getElementById('settings-links-add')!;
@@ -91,6 +94,11 @@ export class SettingsScreen extends BaseScreen {
             await app.saveSettings();
         }
 
+        //Port metadata
+        this.elementMetadataPort.onclick = async () => {
+            await this.portMetadataFile();
+        }
+
         //Init links
         this.initLinksList();
     }
@@ -117,6 +125,53 @@ export class SettingsScreen extends BaseScreen {
     }
 
     //Links
+    private async portMetadataFile(): Promise<void> {
+        //Select metadata file
+        const metadataFile = await open({
+            multiple: false,
+            filters: [{
+                name: 'JSON metadata file',
+                extensions: ['json']
+            }]
+        });
+        if (!metadataFile || Array.isArray(metadataFile)) return;
+
+        //Read metadata file
+        const metadata = await Files.readJSON(metadataFile);
+
+        //Check if metadata is empty
+        if (Object.keys(metadata).length <= 0) {
+            console.log('The JSON metadata file is empty.');
+            return;
+        }
+
+        //Select db file
+        const dbFile = await save({
+            filters: [{
+                name: 'Destination for the SQLite database',
+                extensions: ['db']
+            }]
+        });
+        if (!dbFile) return;
+
+        //Delete file if it exists
+        if (await Files.exists(dbFile)) {
+            await Files.remove(dbFile);
+        }
+
+        //Save to db
+        try {
+            await invoke('save_metadata_db', {
+                dbPath: dbFile,
+                updated: metadata,
+                deleted: []
+            });
+            console.log('Database created successfully.');
+        } catch (e) {
+            console.log(`Error saving to db: ${e}.`);
+        }
+    }
+
     private getLinkName(link: Link, index: number): string {
         //Check if album exists
         const album = link.albumFolder;
@@ -225,20 +280,20 @@ export class SettingsScreen extends BaseScreen {
 
         albumSelect.onclick = async () => {
             //Select album folder
-            const selected = await open({
+            const albumFolder = await open({
                 directory: true,
                 multiple: false,
                 filters: [{
-                    name: 'Select an album folder',
+                    name: 'Album folder',
                     extensions: []
                 }]
             });
 
             //User cancelled dialog
-            if (!selected || Array.isArray(selected)) return;
+            if (!albumFolder || Array.isArray(albumFolder)) return;
 
             //Update input
-            albumInput.value = selected;
+            albumInput.value = albumFolder;
             albumInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
@@ -255,19 +310,19 @@ export class SettingsScreen extends BaseScreen {
 
         metadataSelect.onclick = async () => {
             //Select metadata file
-            const selected = await open({
+            const metadataFile = await open({
                 multiple: false,
                 filters: [{
-                    name: 'Select a metadata file',
+                    name: 'Metadata file',
                     extensions: ['db']
                 }]
             });
 
             //User cancelled dialog
-            if (!selected || Array.isArray(selected)) return;
+            if (!metadataFile || Array.isArray(metadataFile)) return;
 
             //Update input
-            metadataInput.value = selected;
+            metadataInput.value = metadataFile;
             metadataInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
