@@ -93,7 +93,7 @@ export class NotificationManager {
         }
     }
 
-    private closeNotification = (timeout: number, element: HTMLElement) => {
+    private closeNotification = (timeout: any, element: HTMLElement) => {
         //Clear timeout
         clearTimeout(timeout);
 
