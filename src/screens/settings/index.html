@@ -97,10 +97,10 @@
         <!-- Port metadata -->
         <div class="item">
             <div class="item-text">
-                <div class="item-title">Port link metadata</div>
-                <div class="item-description">Ports an older JSON metadata file into the newer SQLite database sysyem.</div>
+                <div class="item-title">Convert old metadata</div>
+                <div class="item-description">Converts an older JSON metadata file into the newer SQLite database system.</div>
             </div>
-            <button id="settings-metadataPort">Port</button>
+            <button id="settings-metadataPort">Convert</button>
         </div>
 
         <!-- Items -->
@@ -157,13 +157,15 @@
     }
 
     .link > div > div {
-        /* Size */
-        flex: 1;
-
         /* Layout */
         display: flex;
         flex-direction: column;
         gap: 10px;
+    }
+
+    .link > div > div:first-of-type {
+        /* Size */
+        flex: 1;
     }
 
     .link > div > div > div {

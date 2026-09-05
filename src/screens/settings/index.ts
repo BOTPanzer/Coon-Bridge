@@ -5,6 +5,17 @@ import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
 import { Files, Link, Util } from '../../util';
 import html from './index.html?raw';
+import { ListAdapter } from '../../util/adapter';
+
+type LinkHolder = {
+    albumSelect: HTMLInputElement;
+    albumInput: HTMLInputElement;
+    metadataInput: HTMLInputElement;
+    metadataSelect: HTMLInputElement;
+    remove: HTMLElement;
+    moveUp: HTMLElement;
+    moveDown: HTMLElement;
+}
 
 export class SettingsScreen extends BaseScreen {
 
@@ -22,6 +33,8 @@ export class SettingsScreen extends BaseScreen {
     elementLinksMetadataDialog!: HTMLDialogElement
     elementLinksMetadataDialogSelect!: HTMLInputElement
     elementLinksMetadataDialogCreate!: HTMLInputElement
+
+    linksAdapter!: ListAdapter<Link, LinkHolder>
 
     //Screen
     constructor(app: App) {
@@ -112,7 +125,25 @@ export class SettingsScreen extends BaseScreen {
         });
 
         //Init links
-        this.initLinksList();
+        this.linksAdapter = new ListAdapter<Link, LinkHolder>(this.elementLinksList, app.settings.links, this.onCreateLinkElement, this.onUpdateLinkHolder);
+
+        this.elementLinksAdd.onclick = async () => {
+            //Create new link
+            const link = {
+                albumFolder: '',
+                metadataFile: ''
+            };
+
+            //Add link to list
+            const index = app.settings.links.add(link);
+            await app.saveSettings();
+
+            //Create link element
+            this.linksAdapter.notifyItemAdded(index);
+
+            //Nofify Amount changed
+            this.notifyLinksAmountChanged();
+        }
     }
 
     protected onOpened(): void {}
@@ -181,113 +212,71 @@ export class SettingsScreen extends BaseScreen {
         }
     }
 
-    private getLinkName(link: Link, index: number): string {
-        //Check if album exists
-        const album = link.albumFolder;
-        const name = Files.getName(album);
-
-        //Create name
-        return (name ? `Link #${index}: ${name}` : `Link #${index}`)
+    private notifyLinksAmountChanged(): void {
+        if (this.app.settings.links.length <= 0) {
+            //No links
+            this.elementLinksEmpty.style.display = '';
+            this.elementLinksList.style.display = 'none';
+        } else {
+            //Has links
+            this.elementLinksEmpty.style.display = 'none';
+            this.elementLinksList.style.display = '';
+        }
     }
 
-    private initLinksList(): void {
-        //Empty elements list
-        this.elementLinksList.innerHTML = '';
-
-        //Create elements
-        for (const [index, link] of this.app.settings.links.entries()) {
-            //Create link element
-            const element = this.createLinkItem(index, link);
-            this.elementLinksList.appendChild(element);
-        }
-
-        //Assign "add link" event
-        this.elementLinksAdd.onclick = async () => {
-            //Create new link
-            const link = {
-                albumFolder: '',
-                metadataFile: ''
-            };
-
-            //Add link to list
-            const index = this.app.settings.links.add(link);
-            await this.app.saveSettings();
-
-            //Create link element
-            const element = this.createLinkItem(index, link);
-            this.elementLinksList.appendChild(element);
-
-            //Nofify list changed
-            this.notifyLinksListChanged();
-        }
-
-        //Nofify list changed
-        this.notifyLinksListChanged();
-    }
-
-    private createLinkItem(index: number, link: any): HTMLElement {
-        //Get app
-        const app = this.app;
-
-        //Create link element
+    private onCreateLinkElement = (_: Link): HTMLElement => {
+        //Create element
         const element = document.createElement('div');
         element.classList.add('link');
         element.innerHTML = `
-            <span id="link-name">${this.getLinkName(link, index)}</span>
+            <span id="link-name">Link #0</span>
             <div>
-                <button id="link-remove" icon>🗑️</button>
                 <div>
                     <div>
                         <button id="link-album-select" icon>📂</button>
-                        <input id="link-album-input" type="text" autocomplete="off" placeholder="Album folder path" value="${link.albumFolder}">
+                        <input id="link-album-input" type="text" autocomplete="off" placeholder="Album folder path">
                     </div>
                     <div>
-                        <button id="link-metadata-select" icon>📂</button>
-                        <input id="link-metadata-input" type="text" autocomplete="off" placeholder="Metadata file path" value="${link.metadataFile}">
+                        <button id="link-metadata-select" icon>📄</button>
+                        <input id="link-metadata-input" type="text" autocomplete="off" placeholder="Metadata file path">
                     </div>
+                </div>
+                <button id="link-remove" icon style="height: 100%;">🗑️</button>
+                <div>
+                    <button id="link-up" icon>↑</button>
+                    <button id="link-down" icon>↓</button>
                 </div>
             </div>
         `;
+        return element;
+    }
 
-        //Get elements
-        const remove = element.querySelector(`#link-remove`) as HTMLElement;
-        const albumSelect = element.querySelector(`#link-album-select`) as HTMLInputElement;
-        const albumInput = element.querySelector(`#link-album-input`) as HTMLInputElement;
-        const metadataInput = element.querySelector(`#link-metadata-input`) as HTMLInputElement;
-        const metadataSelect = element.querySelector(`#link-metadata-select`) as HTMLInputElement;
+    private onUpdateLinkHolder = (link: Link, index: number, element: HTMLElement): LinkHolder => {
+        //Get app & links
+        const app = this.app;
+        const links = app.settings.links;
 
-        //Add listeners
-        remove.onclick = async () => {
-            //Ask for confirmation
-            const shouldDelete = await confirm(
-                `Are you sure you want to delete link #${app.settings.links.indexOf(link)}?`, 
-                {
-                    title: 'Coon Bridge',
-                    kind: 'warning',
-                    okLabel: 'Delete',
-                    cancelLabel: 'Cancel'
-                }
-            )
-            if (!shouldDelete) return;
-
-            //Remove link & element
-            const index = app.settings.links.remove(link);
-            if (index <= -1) return
-            await app.saveSettings();
-            this.elementLinksList.removeChild(element);
-
-            //Update link names
-            const linkElements = this.elementLinksList.querySelectorAll('.link');
-            for (const [index, element] of linkElements.entries()) {
-                const link = app.settings.links[index];
-                element.querySelector('#link-name')!.innerHTML = this.getLinkName(link, index)
-            }
-
-            //Nofify list changed
-            this.notifyLinksListChanged();
+        //Create holder
+        const holder = {
+            name: element.querySelector(`#link-name`) as HTMLElement,
+            albumSelect: element.querySelector(`#link-album-select`) as HTMLInputElement,
+            albumInput: element.querySelector(`#link-album-input`) as HTMLInputElement,
+            metadataInput: element.querySelector(`#link-metadata-input`) as HTMLInputElement,
+            metadataSelect: element.querySelector(`#link-metadata-select`) as HTMLInputElement,
+            remove: element.querySelector(`#link-remove`) as HTMLInputElement,
+            moveUp: element.querySelector(`#link-up`) as HTMLInputElement,
+            moveDown: element.querySelector(`#link-down`) as HTMLInputElement
         }
 
-        albumSelect.onclick = async () => {
+        //Update info
+        const name = Files.getName(link.albumFolder);
+
+        holder.name.innerText = (name ? `Link #${index}: ${name}` : `Link #${index}`);
+        holder.albumInput.value = link.albumFolder;
+        holder.metadataInput.value = link.metadataFile;
+
+        //Add listeners
+        holder.albumSelect.onclick = async () => {
             //Select album folder
             const albumFolder = await open({
                 directory: true,
@@ -300,25 +289,21 @@ export class SettingsScreen extends BaseScreen {
             if (!albumFolder || Array.isArray(albumFolder)) return;
 
             //Update input
-            albumInput.value = albumFolder;
-            albumInput.dispatchEvent(new Event('input', { bubbles: true }));
+            holder.albumInput.value = albumFolder;
+            holder.albumInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
-        albumInput.oninput = async () => {
+        holder.albumInput.oninput = async () => {
             //Update album folder
-            link.albumFolder = albumInput.value;
+            link.albumFolder = holder.albumInput.value;
             await app.saveSettings();
 
             //Update album name
-            const index = app.settings.links.indexOf(link);
-            const linkElements = this.elementLinksList.querySelectorAll('.link');
-            linkElements[index].querySelector('#link-name')!.innerHTML = this.getLinkName(link, index)
+            this.linksAdapter.notifyItemChanged(index);
         }
 
-        metadataSelect.onclick = async () => {
-            //Select metadata file
-            this.elementLinksMetadataDialog.showModal();
-
+        holder.metadataSelect.onclick = async () => {
+            //Assign option listeners
             this.elementLinksMetadataDialogSelect.onclick = async () => {
                 //Close dialog
                 this.elementLinksMetadataDialog.close()
@@ -334,8 +319,8 @@ export class SettingsScreen extends BaseScreen {
                 if (!metadataFile || Array.isArray(metadataFile)) return;
 
                 //Update input
-                metadataInput.value = metadataFile;
-                metadataInput.dispatchEvent(new Event('input', { bubbles: true }));
+                holder.metadataInput.value = metadataFile;
+                holder.metadataInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
 
             this.elementLinksMetadataDialogCreate.onclick = async () => {
@@ -355,31 +340,73 @@ export class SettingsScreen extends BaseScreen {
                 await invoke('create_metadata_db', { dbPath: metadataFile });
 
                 //Update input
-                metadataInput.value = metadataFile;
-                metadataInput.dispatchEvent(new Event('input', { bubbles: true }));
+                holder.metadataInput.value = metadataFile;
+                holder.metadataInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
+
+            //Show dialog
+            this.elementLinksMetadataDialog.showModal();
         }
 
-        metadataInput.oninput = async () => {
+        holder.metadataInput.oninput = async () => {
             //Update metadata file
-            link.metadataFile = metadataInput.value;
+            link.metadataFile = holder.metadataInput.value;
             await app.saveSettings();
         }
 
-        //Return element
-        return element;
-    }
+        holder.remove.onclick = async () => {
+            //Ask for confirmation
+            const shouldDelete = await confirm(
+                `Are you sure you want to delete link #${links.indexOf(link)}?`, 
+                {
+                    title: 'Coon Bridge',
+                    kind: 'warning',
+                    okLabel: 'Delete',
+                    cancelLabel: 'Cancel'
+                }
+            )
+            if (!shouldDelete) return;
 
-    private notifyLinksListChanged(): void {
-        if (this.app.settings.links.length <= 0) {
-            //No links
-            this.elementLinksEmpty.style.display = '';
-            this.elementLinksList.style.display = 'none';
-        } else {
-            //Has links
-            this.elementLinksEmpty.style.display = 'none';
-            this.elementLinksList.style.display = '';
+            //Remove link & element
+            links.remove(link);
+            await app.saveSettings();
+            this.linksAdapter.notifyItemRemoved(index);
+
+            //Update link names
+            for (let i = index; i < links.length; i++) {
+                this.linksAdapter.notifyItemChanged(i);
+            }
+
+            //Nofify amount changed
+            this.notifyLinksAmountChanged();
         }
+
+        holder.moveUp.disabled = index <= 0;
+        holder.moveUp.onclick = async () => {
+            //Swap link positions
+            const previousIndex = index - 1;
+            [links[previousIndex], links[index]] = [links[index], links[previousIndex]];
+            console.log(previousIndex, index);
+
+            //Update elements
+            this.linksAdapter.notifyItemChanged(previousIndex);
+            this.linksAdapter.notifyItemChanged(index);
+        }
+
+        holder.moveDown.disabled = index >= this.app.settings.links.length - 1;
+        holder.moveDown.onclick = async () => {
+            //Swap link positions
+            const nextIndex = index + 1;
+            [links[index], links[nextIndex]] = [links[nextIndex], links[index]];
+            console.log(index, nextIndex);
+
+            //Update elements
+            this.linksAdapter.notifyItemChanged(index);
+            this.linksAdapter.notifyItemChanged(nextIndex);
+        }
+
+        //Return holder
+        return holder;
     }
 
 }
