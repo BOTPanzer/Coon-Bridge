@@ -107,3 +107,15 @@ pub fn save_metadata_db(db_path: String, updated: HashMap<String, MetadataItem>,
     tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[tauri::command]
+pub fn create_metadata_db(db_path: String) -> Result<(), String> {
+    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS items (name TEXT PRIMARY KEY NOT NULL, caption TEXT, labels TEXT, text TEXT, embedding BLOB)",
+        [],
+    ).map_err(|e| e.to_string())?;
+
+    Ok(())
+}

@@ -1,9 +1,9 @@
-import { ask, open, save } from '@tauri-apps/plugin-dialog';
+import { confirm, open, save } from '@tauri-apps/plugin-dialog';
 import { enable, disable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { invoke } from '@tauri-apps/api/core';
 import { type App } from '../../app';
 import { BaseScreen } from  '../screen';
-import { Files, Link } from '../../util';
+import { Files, Link, Util } from '../../util';
 import html from './index.html?raw';
 
 export class SettingsScreen extends BaseScreen {
@@ -19,6 +19,9 @@ export class SettingsScreen extends BaseScreen {
     elementLinksEmpty!: HTMLElement
     elementLinksList!: HTMLElement
     elementLinksAdd!: HTMLElement
+    elementLinksMetadataDialog!: HTMLDialogElement
+    elementLinksMetadataDialogSelect!: HTMLInputElement
+    elementLinksMetadataDialogCreate!: HTMLInputElement
 
     //Screen
     constructor(app: App) {
@@ -41,6 +44,9 @@ export class SettingsScreen extends BaseScreen {
         this.elementLinksEmpty = document.getElementById('settings-links-empty')!;
         this.elementLinksList = document.getElementById('settings-links-list')!;
         this.elementLinksAdd = document.getElementById('settings-links-add')!;
+        this.elementLinksMetadataDialog = document.getElementById('settings-links-metadataDialog') as HTMLDialogElement
+        this.elementLinksMetadataDialogSelect = document.getElementById('settings-links-metadataDialog-select') as HTMLInputElement
+        this.elementLinksMetadataDialogCreate = document.getElementById('settings-links-metadataDialog-create') as HTMLInputElement
 
         //Get app
         const app = this.app;
@@ -98,6 +104,12 @@ export class SettingsScreen extends BaseScreen {
         this.elementMetadataPort.onclick = async () => {
             await this.portMetadataFile();
         }
+
+        //Select metadata dialog
+        Util.onDialogBackdropClick(this.elementLinksMetadataDialog, () => {
+            //Close dialog
+            this.elementLinksMetadataDialog.close();
+        });
 
         //Init links
         this.initLinksList();
@@ -161,11 +173,7 @@ export class SettingsScreen extends BaseScreen {
 
         //Save to db
         try {
-            await invoke('save_metadata_db', {
-                dbPath: dbFile,
-                updated: metadata,
-                deleted: []
-            });
+            await invoke('save_metadata_db', { dbPath: dbFile, updated: metadata, deleted: [] });
             this.app.notifications.create('Port metadata', 'Database created successfully.');
         } catch (e) {
             this.app.notifications.create('Port metadata', `Error saving to db: ${e}.`, { duration: 10000 });
@@ -251,7 +259,7 @@ export class SettingsScreen extends BaseScreen {
         //Add listeners
         remove.onclick = async () => {
             //Ask for confirmation
-            const confirm = await ask(
+            const shouldDelete = await confirm(
                 `Are you sure you want to delete link #${app.settings.links.indexOf(link)}?`, 
                 {
                     title: 'Coon Bridge',
@@ -260,7 +268,7 @@ export class SettingsScreen extends BaseScreen {
                     cancelLabel: 'Cancel'
                 }
             )
-            if (!confirm) return;
+            if (!shouldDelete) return;
 
             //Remove link & element
             const index = app.settings.links.remove(link);
@@ -289,8 +297,6 @@ export class SettingsScreen extends BaseScreen {
                     extensions: []
                 }]
             });
-
-            //User cancelled dialog
             if (!albumFolder || Array.isArray(albumFolder)) return;
 
             //Update input
@@ -311,20 +317,47 @@ export class SettingsScreen extends BaseScreen {
 
         metadataSelect.onclick = async () => {
             //Select metadata file
-            const metadataFile = await open({
-                multiple: false,
-                filters: [{
-                    name: 'Metadata file',
-                    extensions: ['db']
-                }]
-            });
+            this.elementLinksMetadataDialog.showModal();
 
-            //User cancelled dialog
-            if (!metadataFile || Array.isArray(metadataFile)) return;
+            this.elementLinksMetadataDialogSelect.onclick = async () => {
+                //Close dialog
+                this.elementLinksMetadataDialog.close()
 
-            //Update input
-            metadataInput.value = metadataFile;
-            metadataInput.dispatchEvent(new Event('input', { bubbles: true }));
+                //Select path
+                const metadataFile = await open({
+                    multiple: false,
+                    filters: [{
+                        name: 'Metadata file',
+                        extensions: ['db']
+                    }]
+                });
+                if (!metadataFile || Array.isArray(metadataFile)) return;
+
+                //Update input
+                metadataInput.value = metadataFile;
+                metadataInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            this.elementLinksMetadataDialogCreate.onclick = async () => {
+                //Close dialog
+                this.elementLinksMetadataDialog.close()
+
+                //Select path
+                const metadataFile = await save({
+                    filters: [{
+                        name: 'Metadata file',
+                        extensions: ['db']
+                    }]
+                });
+                if (!metadataFile || Array.isArray(metadataFile)) return;
+
+                //Create database
+                await invoke('create_metadata_db', { dbPath: metadataFile });
+
+                //Update input
+                metadataInput.value = metadataFile;
+                metadataInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         }
 
         metadataInput.oninput = async () => {

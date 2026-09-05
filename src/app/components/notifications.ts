@@ -43,26 +43,26 @@ export class NotificationManager {
         const notification = this.notificationsQueue[0];
         this.notificationsQueue.shift()
 
-        //Create notification
-        const base = document.createElement('div');
-        base.classList.add('notification')
+        //Create notification element
+        const element = document.createElement('div');
+        element.classList.add('notification')
 
         const close = document.createElement('div');
         close.id = 'notification-close';
         close.innerText = '✕';
-        base.appendChild(close);
+        element.appendChild(close);
 
         const title = document.createElement('div');
         title.id = 'notification-title';
         title.innerText = notification.title;
-        base.appendChild(title);
+        element.appendChild(title);
 
         const content = document.createElement('div');
         content.id = 'notification-content';
         content.innerText = notification.content;
-        base.appendChild(content);
+        element.appendChild(content);
 
-        document.body.appendChild(base);
+        document.body.appendChild(element);
 
         //Get notification options
         const options = notification.options;
@@ -70,11 +70,11 @@ export class NotificationManager {
         //Check duration
         const duration = options.duration ?? 3000;
         const timeout = setTimeout(() => {
-            this.closeNotification(timeout, base);
+            this.closeNotification(timeout, element);
         }, duration)
 
-        //Noti listeners
-        base.onclick = (event) =>  {
+        //Add listeners
+        element.onclick = (event) =>  {
             //Intercept event
             Util.interceptEvent(event);
 
@@ -82,31 +82,31 @@ export class NotificationManager {
             options.action?.();
 
             //Close notification
-            this.closeNotification(timeout, base);
+            this.closeNotification(timeout, element);
         }
         close.onclick = (event) => {
             //Intercept event
             Util.interceptEvent(event);
 
             //Close notification
-            this.closeNotification(timeout, base);
+            this.closeNotification(timeout, element);
         }
     }
 
-    private closeNotification = (timeout: number, notification: HTMLElement) => {
+    private closeNotification = (timeout: number, element: HTMLElement) => {
         //Clear timeout
         clearTimeout(timeout);
 
         //Add an event that prevents the others
-        notification.onclick = (event) => { 
+        element.onclick = (event) => { 
             //Intercept event
             Util.interceptEvent(event);
         }
 
         //Hide notification
-        notification.setAttribute('hidden', '');
+        element.setAttribute('hidden', '');
         setTimeout(() => {
-            notification.remove();
+            element.remove();
             this.areNotificationsActive = false;
             this.notify();
         }, 700);

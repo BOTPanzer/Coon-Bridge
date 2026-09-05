@@ -633,6 +633,13 @@ dialog:not(:modal) {
     gap: 10px;
 }
 
+.menu-list[horizontal] {
+    /* Layout */
+    flex-direction: row;
+    align-items: unset;
+    justify-content: center;
+}
+
 .menu-list > input[type="text"] {
     /* Size */
     width: 100%;
