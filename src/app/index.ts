@@ -3,6 +3,7 @@ import { getMatches } from '@tauri-apps/plugin-cli';
 import { BaseScreen, HomeScreen, SettingsScreen, MetadataScreen, SyncScreen } from '../screens';
 import { AppSettings, loadSettings, saveSettings } from './components/settings';
 import { AppBridge } from './components/bridge';
+import { NotificationManager } from './components/notifications';
 
 
 
@@ -174,8 +175,10 @@ export class App {
                                       |_*/
 
     //Components
+    private _notifications: NotificationManager = new NotificationManager();
     private _bridge: AppBridge
 
+    get notifications(): NotificationManager { return this._notifications; }
     get bridge(): AppBridge { return this._bridge; }
 
     //Settings

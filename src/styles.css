@@ -640,6 +640,125 @@ dialog:not(:modal) {
 
 
 
+ /*$   /$$             /$$     /$$  /$$$$$$  /$$                       /$$     /$$                              
+| $$$ | $$            | $$    |__/ /$$__  $$|__/                      | $$    |__/                              
+| $$$$| $$  /$$$$$$  /$$$$$$   /$$| $$  \__/ /$$  /$$$$$$$  /$$$$$$  /$$$$$$   /$$  /$$$$$$  /$$$$$$$   /$$$$$$$
+| $$ $$ $$ /$$__  $$|_  $$_/  | $$| $$$$    | $$ /$$_____/ |____  $$|_  $$_/  | $$ /$$__  $$| $$__  $$ /$$_____/
+| $$  $$$$| $$  \ $$  | $$    | $$| $$_/    | $$| $$        /$$$$$$$  | $$    | $$| $$  \ $$| $$  \ $$|  $$$$$$ 
+| $$\  $$$| $$  | $$  | $$ /$$| $$| $$      | $$| $$       /$$__  $$  | $$ /$$| $$| $$  | $$| $$  | $$ \____  $$
+| $$ \  $$|  $$$$$$/  |  $$$$/| $$| $$      | $$|  $$$$$$$|  $$$$$$$  |  $$$$/| $$|  $$$$$$/| $$  | $$ /$$$$$$$/
+|__/  \__/ \______/    \___/  |__/|__/      |__/ \_______/ \_______/   \___/  |__/ \______/ |__/  |__/|______*/ 
+
+.notification {
+    /* Size */
+    min-width: 200px;
+    max-width: 300px;
+    height: fit-content;
+    padding: 15px;
+
+    /* Layout */
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
+
+    /* Appearence */
+    background-color: var(--surface);
+    border-radius: calc(20px);
+    border: var(--borderSoft);
+    animation: notificationAppear .2s;
+
+    /* Other */
+    transition: opacity 0.5s;
+    cursor: pointer;
+    z-index: 999;
+}
+
+@keyframes notificationAppear {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(0); }
+}
+
+.notification[hidden] {
+    /* Appearence */
+    opacity: 0;
+
+    /* Other */
+    pointer-events: none;
+}
+
+.notification > #notification-close {
+    /* Size */
+    width: 25px; 
+    height: 25px; 
+
+    /* Layout */
+    position: absolute; 
+    top: 10px; 
+    right: 10px; 
+
+    /* Text */
+    line-height: 25px; 
+    font-size: 12px; 
+    text-align: center; 
+    font-family: Arial, Monospaced;
+
+    /* Appearence */
+    border-radius: 20px;
+    opacity: 0;
+
+    /* Other */
+    transition: all .3s;
+}
+
+.notification:hover > #notification-close {
+    /* Appearence */
+    opacity: 1;
+}
+
+.notification > #notification-close:hover {
+    /* Appearence */
+    background: var(--hover);
+}
+
+.notification > #notification-title, .notification > #notification-content {
+    /* Size */
+    width: fit-content;
+
+    /* Layout */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+
+    /* Text */
+    line-height: normal;
+}
+
+.notification > #notification-title {
+    /* Size */
+    max-width: calc(100% - 30px);
+
+    /* Text */
+    font-size: 16px;
+    line-clamp: 1;
+    color: var(--text);
+}
+
+.notification > #notification-content {
+    /* Size */
+    max-width: 100%;
+
+    /* Text */
+    font-size: 14px;
+    line-clamp: 2;
+    color: var(--textSecondary);
+}
+
+
+
  /*$$$$$$$                    /$$
 |__  $$__/                   | $$
    | $$  /$$$$$$  /$$   /$$ /$$$$$$

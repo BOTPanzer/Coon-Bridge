@@ -141,7 +141,7 @@ export class SettingsScreen extends BaseScreen {
 
         //Check if metadata is empty
         if (Object.keys(metadata).length <= 0) {
-            console.log('The JSON metadata file is empty.');
+            this.app.notifications.create('Port metadata', 'The JSON metadata file is empty.');
             return;
         }
 
@@ -166,9 +166,10 @@ export class SettingsScreen extends BaseScreen {
                 updated: metadata,
                 deleted: []
             });
-            console.log('Database created successfully.');
+            this.app.notifications.create('Port metadata', 'Database created successfully.');
         } catch (e) {
-            console.log(`Error saving to db: ${e}.`);
+            this.app.notifications.create('Port metadata', `Error saving to db: ${e}.`, { duration: 10000 });
+            console.log(e);
         }
     }
 
