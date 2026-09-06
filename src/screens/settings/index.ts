@@ -126,6 +126,7 @@ export class SettingsScreen extends BaseScreen {
 
         //Init links
         this.linksAdapter = new ListAdapter<Link, LinkHolder>(this.elementLinksList, app.settings.links, this.onCreateLinkElement, this.onUpdateLinkHolder);
+        this.notifyLinksAmountChanged();
 
         this.elementLinksAdd.onclick = async () => {
             //Create new link
