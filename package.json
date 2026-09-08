@@ -2,7 +2,7 @@
     "name": "coon-bridge",
     "description": "An app for managing Coon Gallery backups and AI description generation.",
     "author": "Botpa",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "type": "module",
     "scripts": {
         "dev": "vite",
