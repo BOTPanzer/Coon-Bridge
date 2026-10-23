@@ -96,18 +96,20 @@ class DescriptionModel:
         if not self.model or not self.processor:
             raise RuntimeError("Model is not loaded!")
 
-        # Run prompt
-        inputs = self.processor(text=prompt, images=image, return_tensors='pt').to(self.device, self.torch_dtype)
-        generated_ids = self.model.generate(
-            input_ids=inputs['input_ids'],
-            pixel_values=inputs['pixel_values'],
-            max_new_tokens=1024,
-            num_beams=3
-        )
-        generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=False)
-        generated_text = generated_text[0]
-        parsed_answer = self.processor.post_process_generation(generated_text, task=prompt, image_size=(image.width, image.height))
-        return parsed_answer[prompt]
+        # Run prompt (use no_grad to prevent tracking gradients and leaking memory)
+        import torch
+        with torch.no_grad():
+            inputs = self.processor(text=prompt, images=image, return_tensors='pt').to(self.device, self.torch_dtype)
+            generated_ids = self.model.generate(
+                input_ids=inputs['input_ids'],
+                pixel_values=inputs['pixel_values'],
+                max_new_tokens=1024,
+                num_beams=3
+            )
+            generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=False)
+            generated_text = generated_text[0]
+            parsed_answer = self.processor.post_process_generation(generated_text, task=prompt, image_size=(image.width, image.height))
+            return parsed_answer[prompt]
 
     def generate_caption(self, image: ImageFile) -> str:
         result = self.run(image, '<MORE_DETAILED_CAPTION>') # <CAPTION> <DETAILED_CAPTION> <MORE_DETAILED_CAPTION>
@@ -270,6 +272,13 @@ if __name__ == "__main__":
                         # Load image from last image cache
                         image_data = last_image_cache["data"]
                     else:
+                        # Close previous cached image
+                        if last_image_cache["data"] is not None:
+                            try:
+                                last_image_cache["data"].close()
+                            except Exception:
+                                pass
+                        
                         # Load image as new
                         ImageFile.LOAD_TRUNCATED_IMAGES = True
                         image_data = Image.open(image_path).convert("RGB")
